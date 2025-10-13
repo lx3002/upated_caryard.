@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow p-4">
+  <img src="{{ vehicle.image.url }}" class="img-fluid mb-3" alt="{{ vehicle.title }}">
+  <h2>{{ vehicle.title }}</h2>
+  <p>{{ vehicle.description }}</p>
+  <p class="fw-bold">Price: ${{ vehicle.price }}</p>
+
+  <!-- Booking -->
+  <h4>Book This Vehicle</h4>
+  <form method="post" action="{% url 'book_vehicle' vehicle.pk %}">
+    {% csrf_token %}
+    {{ booking_form.as_p }}
+    <button type="submit" class="btn btn-success">Book Now</button>
+  </form>
+
+  <!-- Comments -->
+  <h4 class="mt-4">Comments</h4>
+  <div id="comments">
+    {% for c in vehicle.comment_set.all %}
+      <p><strong>{{ c.user.username }}:</strong> {{ c.content }}</p>
+    {% empty %}
+      <p>No comments yet.</p>
+    {% endfor %}
+  </div>
+
+  {% if user.is_authenticated %}
+    <form id="comment-form" method="post" action="{% url 'ajax_comment' %}">
+      {% csrf_token %}
+      <input type="hidden" name="vehicle_id" value="{{ vehicle.id }}">
+      <textarea name="content" class="form-control mb-2" placeholder="Write a comment..."></textarea>
+      <button class="btn btn-primary">Add Comment</button>
+    </form>
+  {% endif %}
+</div>
+
+<script>
+  $("#comment-form").on("submit", function(e) {
+    e.preventDefault();
+    $.post($(this).attr("action"), $(this).serialize(), function(data) {
+      if (data.ok) {
+        $("#comments").append("<p><strong>" + data.user + ":</strong> " + data.content + "</p>");
+      }
+    });
+  });
+</script>
+{% endblock %}

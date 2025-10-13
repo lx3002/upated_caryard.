@@ -1,0 +1,25 @@
+{% extends "base.html" %} {% load static %} {% block content %}
+<div class="d-flex justify-content-center align-items-center mt-5">
+    <div class="card shadow-lg p-4" style="max-width: 400px; width: 100%;">
+        <h3 class="text-center mb-4"><i class="fa fa-sign-in-alt"></i> Login</h3>
+
+        <form method="post">
+            {% csrf_token %} {{ form.as_p }}
+
+            <button type="submit" class="btn btn-primary w-100">
+        <i class="fa fa-lock"></i> Login
+      </button>
+        </form>
+
+        <hr>
+        <div class="text-center">
+            <p class="mb-1">
+                <a href="{% url 'signup' %}"><i class="fa fa-user-plus"></i> Don’t have an account? Sign up</a>
+            </p>
+            <p class="text-muted">
+                <i class="fa fa-key"></i> Forgot password? (reset functionality can be added later)
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

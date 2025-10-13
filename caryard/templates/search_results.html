@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<h2 class="mb-4"><i class="fa fa-search"></i> Search Results</h2>
+
+{% if vehicles %}
+<div class="row">
+    {% for vehicle in vehicles %}
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm h-100">
+            {% if vehicle.image %}
+                <img src="{{ vehicle.image.url }}" class="card-img-top" alt="{{ vehicle.title }}">
+            {% else %}
+                <img src="{% static 'images/no-image.png' %}" class="card-img-top" alt="No image available">
+            {% endif %}
+
+            <div class="card-body">
+                <h5 class="card-title">{{ vehicle.title }}</h5>
+                <p class="card-text text-muted">{{ vehicle.description|truncatewords:15 }}</p>
+                <span class="badge bg-success">${{ vehicle.price }}</span>
+                <span class="badge bg-info"><i class="fa fa-user"></i> {{ vehicle.seller.user.username }}</span>
+            </div>
+            <div class="card-footer text-center">
+                <a href="{% url 'vehicle_detail' vehicle.pk %}" class="btn btn-outline-primary btn-sm">
+                    <i class="fa fa-eye"></i> View Details
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+    <p class="text-muted">No results found for your search.</p>
+{% endif %}
+{% endblock %}

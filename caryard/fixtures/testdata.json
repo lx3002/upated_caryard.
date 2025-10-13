@@ -1,0 +1,86 @@
+[
+  {
+    "model": "auth.user",
+    "pk": 1,
+    "fields": {
+      "username": "seller1",
+      "password": "pbkdf2_sha256$600000$demo123$4cZJ7M1+L0ZXFP4Dp2l5S7bZB3a2M8pG3f0zZ+oWr0E=", 
+      "email": "seller1@example.com",
+      "is_active": true,
+      "is_superuser": false,
+      "is_staff": false
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 2,
+    "fields": {
+      "username": "buyer1",
+      "password": "pbkdf2_sha256$600000$demo123$4cZJ7M1+L0ZXFP4Dp2l5S7bZB3a2M8pG3f0zZ+oWr0E=", 
+      "email": "buyer1@example.com",
+      "is_active": true,
+      "is_superuser": false,
+      "is_staff": false
+    }
+  },
+  {
+    "model": "caryard.seller",
+    "pk": 1,
+    "fields": {
+      "user": 1,
+      "phone": "0700000000",
+      "address": "Nairobi, Kenya"
+    }
+  },
+  {
+    "model": "caryard.buyer",
+    "pk": 1,
+    "fields": {
+      "user": 2,
+      "phone": "0711111111"
+    }
+  },
+  {
+    "model": "caryard.vehicle",
+    "pk": 1,
+    "fields": {
+      "seller": 1,
+      "title": "Toyota Corolla 2018",
+      "description": "Well maintained Toyota Corolla with low mileage.",
+      "price": "1200000.00",
+      "image": "vehicles/corolla.jpg",
+      "created": "2025-01-01T10:00:00Z"
+    }
+  },
+  {
+    "model": "caryard.vehicle",
+    "pk": 2,
+    "fields": {
+      "seller": 1,
+      "title": "Honda Civic 2017",
+      "description": "Sporty Honda Civic, excellent condition.",
+      "price": "1100000.00",
+      "image": "vehicles/civic.jpg",
+      "created": "2025-01-02T12:00:00Z"
+    }
+  },
+  {
+    "model": "caryard.comment",
+    "pk": 1,
+    "fields": {
+      "vehicle": 1,
+      "user": 2,
+      "content": "Looks great! Can I test drive?",
+      "created": "2025-01-05T15:30:00Z"
+    }
+  },
+  {
+    "model": "caryard.rating",
+    "pk": 1,
+    "fields": {
+      "vehicle": 1,
+      "user": 2,
+      "score": 4
+    }
+  }
+]

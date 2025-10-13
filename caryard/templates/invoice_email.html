@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Car Yard Invoice</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .invoice-container {
+            background: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+        }
+        .invoice-header {
+            text-align: center;
+            border-bottom: 2px solid #007bff;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+        .invoice-header h2 {
+            margin: 0;
+            color: #007bff;
+        }
+        .invoice-details {
+            margin: 20px 0;
+        }
+        .invoice-details table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .invoice-details th, .invoice-details td {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+        .invoice-footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #555;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <div class="invoice-header">
+            <h2>Car Yard Payment Invoice</h2>
+            <p>Thank you for your purchase!</p>
+        </div>
+
+        <p>Hello <strong>{{ booking.buyer.user.username }}</strong>,</p>
+        <p>Here are the details of your recent payment:</p>
+
+        <div class="invoice-details">
+            <table>
+                <tr>
+                    <th>Vehicle</th>
+                    <td>{{ booking.vehicle.title }}</td>
+                </tr>
+                <tr>
+                    <th>Price</th>
+                    <td class="highlight">${{ booking.vehicle.price }}</td>
+                </tr>
+                <tr>
+                    <th>Payment Method</th>
+                    <td>{{ payment.method }}</td>
+                </tr>
+                <tr>
+                    <th>Payment Date</th>
+                    <td>{{ payment.created|date:"Y-m-d H:i" }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <p>An official PDF invoice is attached to this email.</p>
+
+        <div class="invoice-footer">
+            <p>&copy; {{ booking.created.year }} Car Yard. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
