@@ -34,7 +34,11 @@ urlpatterns = [
   
   path("payment/success/<int:booking_id>/", views.payment_success, name="payment_success"),
   path("payment/cancel/<int:booking_id>/", views.payment_cancel, name="payment_cancel"),
+   
+   
+   
     # ... your other urls
-    
+   path('inbox/', views.inbox, name='inbox'),
+    path('send/<str:username>/', views.send_message, name='send_message'),
 
 ]

@@ -1,47 +1,73 @@
-{% extends "base.html" %}
-{% block content %}
-<div class="card shadow p-4">
-  <img src="{{ vehicle.image.url }}" class="img-fluid mb-3" alt="{{ vehicle.title }}">
-  <h2>{{ vehicle.title }}</h2>
-  <p>{{ vehicle.description }}</p>
-  <p class="fw-bold">Price: ${{ vehicle.price }}</p>
+{% extends "base.html" %} {% block content %}
+<div class="card shadow p-4 mb-4">
+    <!-- Vehicle Image -->
+    <img src="{{ vehicle.image.url }}" class="img-fluid mb-3 rounded" alt="{{ vehicle.title }}">
 
-  <!-- Booking -->
-  <h4>Book This Vehicle</h4>
-  <form method="post" action="{% url 'book_vehicle' vehicle.pk %}">
-    {% csrf_token %}
-    {{ booking_form.as_p }}
-    <button type="submit" class="btn btn-success">Book Now</button>
-  </form>
+    <!-- Vehicle Details -->
+    <h2 class="fw-bold">{{ vehicle.title }}</h2>
+    <p>{{ vehicle.description }}</p>
+    <p class="fw-bold text-success">Price: ${{ vehicle.price }}</p>
 
-  <!-- Comments -->
-  <h4 class="mt-4">Comments</h4>
-  <div id="comments">
-    {% for c in vehicle.comment_set.all %}
-      <p><strong>{{ c.user.username }}:</strong> {{ c.content }}</p>
-    {% empty %}
-      <p>No comments yet.</p>
-    {% endfor %}
-  </div>
+    <!-- Message Seller -->
+    {% if vehicle.seller %}
+    <div class="mt-3 mb-4">
+        <a href="{% url 'send_message' vehicle.seller.user.username %}" class="btn btn-outline-secondary">
+            <i class="fa fa-envelope"></i> Message Seller
+        </a>
+    </div>
+    {% else %}
+    <div class="alert alert-warning mt-3">
+        <i class="fa fa-exclamation-circle"></i> Seller information not available.
+    </div>
+    {% endif %}
 
-  {% if user.is_authenticated %}
-    <form id="comment-form" method="post" action="{% url 'ajax_comment' %}">
-      {% csrf_token %}
-      <input type="hidden" name="vehicle_id" value="{{ vehicle.id }}">
-      <textarea name="content" class="form-control mb-2" placeholder="Write a comment..."></textarea>
-      <button class="btn btn-primary">Add Comment</button>
-    </form>
-  {% endif %}
+
+
+    <!-- Booking Form -->
+    <div class="mt-4">
+        <h4 class="fw-semibold">Book This Vehicle</h4>
+        <form method="post" action="{% url 'book_vehicle' vehicle.pk %}">
+            {% csrf_token %} {{ booking_form.as_p }}
+            <button type="submit" class="btn btn-success mt-2">Book Now</button>
+        </form>
+    </div>
+
+    <!-- Comments Section -->
+    <div class="mt-5">
+        <h4 class="fw-semibold">Comments</h4>
+        <div id="comments" class="mt-3">
+            {% for c in vehicle.comment_set.all %}
+            <p><strong>{{ c.user.username }}:</strong> {{ c.content }}</p>
+            {% empty %}
+            <p class="text-muted">No comments yet.</p>
+            {% endfor %}
+        </div>
+
+        {% if user.is_authenticated %}
+        <form id="comment-form" method="post" action="{% url 'ajax_comment' %}" class="mt-3">
+            {% csrf_token %}
+            <input type="hidden" name="vehicle_id" value="{{ vehicle.id }}">
+            <textarea name="content" class="form-control mb-2" placeholder="Write a comment..." required></textarea>
+            <button class="btn btn-primary">Add Comment</button>
+        </form>
+        {% else %}
+        <p class="text-muted mt-3">Please <a href="{% url 'login' %}">log in</a> to comment.</p>
+        {% endif %}
+    </div>
 </div>
 
+<!-- AJAX Comment Script -->
 <script>
-  $("#comment-form").on("submit", function(e) {
-    e.preventDefault();
-    $.post($(this).attr("action"), $(this).serialize(), function(data) {
-      if (data.ok) {
-        $("#comments").append("<p><strong>" + data.user + ":</strong> " + data.content + "</p>");
-      }
+    $("#comment-form").on("submit", function(e) {
+        e.preventDefault();
+        $.post($(this).attr("action"), $(this).serialize(), function(data) {
+            if (data.ok) {
+                $("#comments").append(
+                    "<p><strong>" + data.user + ":</strong> " + data.content + "</p>"
+                );
+                $("#comment-form textarea").val("");
+            }
+        });
     });
-  });
 </script>
 {% endblock %}

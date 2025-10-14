@@ -1,0 +1,8 @@
+cd C:\ProgramData\chocolatey\lib\redis\tools
+
+
+redis-server redis.conf
+
+
+redis-cli ping
+

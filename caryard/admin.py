@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Seller, Buyer, Vehicle, Booking, Comment, Rating, Payment, ChatbotLog
+from .models import Seller, Buyer, Vehicle, Booking, Comment, Rating, Payment, ChatbotLog, Messages
 
 
 @admin.register(Seller)
@@ -51,4 +51,9 @@ class  ChatbotLogAdmin(admin.ModelAdmin):
     search_fields = ("user_message", "bot_reply", "user__name")
     list_filter = ("created",)
     
+@admin.register(Messages)
+class MessagesAdmin(admin.ModelAdmin):
+    list_display = ('sender', 'receiver', 'content', 'timestamp')
+    search_fields = ('sender__username', 'receiver__username', 'content')
+    list_filter = ('timestamp',)
 

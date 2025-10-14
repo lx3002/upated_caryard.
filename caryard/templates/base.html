@@ -64,19 +64,31 @@
             box-shadow: none;
         }
         
-        .container {
-            background: transparent !important;
-            box-shadow: none !important;
-        }
-        
         body {
             background: transparent;
+        }
+        /* ✅ Clean alert color borders */
+        
+        .alert-border-success {
+            border-left: 5px solid #28a745 !important;
+        }
+        
+        .alert-border-danger {
+            border-left: 5px solid #dc3545 !important;
+        }
+        
+        .alert-border-warning {
+            border-left: 5px solid #ffc107 !important;
+        }
+        
+        .alert-border-info {
+            border-left: 5px solid #0d6efd !important;
         }
     </style>
 </head>
 
 <body>
-    <!-- Navbar -->
+    <!-- ✅ Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="{% url 'home' %}">
@@ -93,6 +105,12 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'add_vehicle' %}"><i class="fa fa-plus"></i> Add Vehicle</a></li>
 
                     {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'inbox' %}">
+                            <i class="fa fa-envelope"></i> Messages
+                        </a>
+                    </li>
+
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fa fa-user"></i> {{ user.username }}
@@ -105,17 +123,43 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'login' %}"><i class="fa fa-sign-in-alt"></i> Login</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'signup' %}"><i class="fa fa-user-plus"></i> Signup</a></li>
                     {% endif %}
+
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Page Content -->
+    <!-- ✅ Global Message Alerts -->
+    <div class="container mt-4">
+        {% if messages %}
+        <div class="mt-2">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm
+                {% if message.tags == 'success' %} alert-border-success
+                {% elif message.tags == 'error' or message.tags == 'danger' %} alert-border-danger
+                {% elif message.tags == 'warning' %} alert-border-warning
+                {% else %} alert-border-info {% endif %}" role="alert">
+
+                <i class="fa
+                    {% if message.tags == 'success' %} fa-check-circle
+                    {% elif message.tags == 'error' or message.tags == 'danger' %} fa-times-circle
+                    {% elif message.tags == 'warning' %} fa-exclamation-triangle
+                    {% else %} fa-info-circle {% endif %}">
+                </i> {{ message }}
+
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ✅ Page Content -->
     <div class="container mt-4">
         {% block content %}{% endblock %}
     </div>
 
-    <!-- Chatbot Widget -->
+    <!-- ✅ Chatbot Widget -->
     <div id="chatbot" class="card shadow-lg" style="position: fixed; bottom: 20px; right: 20px; width: 300px; display: none; z-index: 9999;">
         <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
             <span><i class="fa fa-robot"></i> Car Yard Bot</span>
@@ -137,7 +181,7 @@
         <i class="fa fa-comments"></i>
     </button>
 
-    <!-- Scripts -->
+    <!-- ✅ Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -173,44 +217,6 @@
                         chatMessages.innerHTML += `<p class="text-primary"><strong>Bot:</strong> ${data.reply}</p>`;
                         chatMessages.scrollTop = chatMessages.scrollHeight;
                     });
-            });
-
-            // Comments on vehicle cards
-            document.querySelectorAll(".comment-form").forEach(form => {
-                form.addEventListener("submit", function(e) {
-                    e.preventDefault();
-
-                    let vehicleId = this.getAttribute("data-vehicle-id");
-                    let content = this.querySelector("input[name='content']").value;
-
-                    fetch("{% url 'ajax_comment' %}", {
-                            method: "POST",
-                            headers: {
-                                "X-CSRFToken": "{{ csrf_token }}",
-                                "X-Requested-With": "XMLHttpRequest",
-                                "Content-Type": "application/x-www-form-urlencoded"
-                            },
-                            body: "vehicle_id=" + vehicleId + "&content=" + encodeURIComponent(content)
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.ok) {
-                                let commentsList = document.getElementById("comments-" + vehicleId);
-
-                                if (commentsList.querySelector(".text-muted")) {
-                                    commentsList.innerHTML = "";
-                                }
-
-                                let newComment = document.createElement("li");
-                                newComment.innerHTML = `<strong>${data.user}</strong>: ${data.content}`;
-                                commentsList.appendChild(newComment);
-
-                                form.querySelector("input[name='content']").value = "";
-                            } else {
-                                alert("Error posting comment");
-                            }
-                        });
-                });
             });
         });
     </script>

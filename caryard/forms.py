@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 import re
-from .models import Booking, Comment, Vehicle, Payment
+from .models import Booking, Comment, Vehicle, Payment, Messages
 
 
 def validate_email_format(email):
@@ -91,4 +91,13 @@ class PaymentForm(StyledFormMixin, forms.ModelForm):
     class Meta:
         model = Payment
         fields = ['method']
+
+
+class MessageForm(forms.ModelForm):
+    class mete:
+        model = Messages
+        fields = ['content']
+        widgets ={
+            'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Type your message here...'}),
+        }
 

@@ -1,0 +1,17 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-4">
+    <div class="card shadow p-4">
+        <h3 class="mb-3"><i class="fa fa-envelope"></i> Send Message to {{ receiver.username }}</h3>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="content" class="form-label">Your Message:</label>
+                <textarea name="content" id="content" class="form-control" rows="4" placeholder="Type your message here..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fa fa-paper-plane"></i> Send</button>
+            <a href="{% url 'inbox' %}" class="btn btn-secondary ms-2"><i class="fa fa-arrow-left"></i> Back to Inbox</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
