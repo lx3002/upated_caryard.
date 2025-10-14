@@ -454,22 +454,48 @@ def chatbot_response(request):
 
 
 
+
+
+@login_required
+def get_messages(request, username):
+    user_to_chat = get_object_or_404(User, username=username)
+    messages = Messages.objects.filter(
+        Q(sender=request.user, receiver=user_to_chat) |
+        Q(sender=user_to_chat, receiver=request.user)
+    ).order_by('timestamp')
+
+    data = []
+    for msg in messages:
+        data.append({
+            "content": msg.content,
+            "time": localtime(msg.timestamp).strftime("%H:%M"),
+            "is_sender": msg.sender == request.user
+        })
+
+    return JsonResponse({"messages": data})
+
+
+
+
+
+
+
+
+
 @login_required
 def inbox(request):
     messages_received = Messages.objects.filter(receiver=request.user).order_by('-timestamp')
     return render(request, 'inbox.html', {'messages': messages_received})
 
+@login_required
 def send_message(request, username):
     receiver = get_object_or_404(User, username=username)
-
-    if request.method == "POST":
-        content = request.POST.get("content")
+    if request.method == 'POST':
+        content = request.POST.get('content')
         if content:
             Messages.objects.create(sender=request.user, receiver=receiver, content=content)
-            messages.success(request, f"Message sent to {receiver.username}!")
-            return redirect("inbox")
-
-    return render(request, "send_message.html", {"receiver": receiver})
+            return redirect('inbox')
+    return render(request, 'send_message.html', {'receiver': receiver})
 
 
 
