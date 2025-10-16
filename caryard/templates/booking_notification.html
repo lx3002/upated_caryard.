@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+
+<body style="font-family: Arial, sans-serif; background-color: #f8f9fa; padding: 20px;">
+    <div style="max-width: 600px; margin: auto; background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <h2 style="color: #2c3e50;">🚗 New Vehicle Booking</h2>
+        <p>Hello <strong>{{ seller.username }}</strong>,</p>
+        <p><strong>{{ buyer.username }}</strong> has just booked your vehicle:</p>
+        <div style="background: #f1f1f1; padding: 10px; border-radius: 6px; margin: 10px 0;">
+            <strong>{{ vehicle.title }}</strong><br> Price: ${{ vehicle.price }}<br> Description: {{ vehicle.description }}
+        </div>
+        <p>Log in to your Car Yard dashboard for full booking details.</p>
+        <a href="http://127.0.0.1:8000/" style="display: inline-block; background: #007bff; color: white; text-decoration: none; padding: 10px 20px; border-radius: 5px;">Go to Dashboard</a>
+        <p style="margin-top: 20px; color: #777;">Best regards,<br>Car Yard Team</p>
+    </div>
+</body>
+
+</html>

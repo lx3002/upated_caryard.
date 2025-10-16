@@ -38,7 +38,10 @@ urlpatterns = [
    
    
     # ... your other urls
-   path('inbox/', views.inbox, name='inbox'),
-    path('send/<str:username>/', views.send_message, name='send_message'),
+  path('inbox/', views.inbox, name='inbox'),
+  path('send/<str:username>/', views.send_message, name='send_message'),
+  path('profile/', views.profile, name='profile'),
+  path('notifications/', views.notifications_view, name='notifications'),
+
 
 ]

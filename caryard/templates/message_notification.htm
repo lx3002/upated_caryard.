@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+
+<body style="font-family: Arial, sans-serif; background-color: #f8f9fa; padding: 20px;">
+    <div style="max-width: 600px; margin: auto; background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <h2 style="color: #2c3e50;">📩 New Message Received</h2>
+        <p>Hello <strong>{{ receiver.username }}</strong>,</p>
+        <p>You’ve received a new message from <strong>{{ sender.username }}</strong>:</p>
+        <blockquote style="background: #f9f9f9; padding: 10px; border-left: 4px solid #007bff;">
+            {{ message.content }}
+        </blockquote>
+        <p>Log in to reply.</p>
+        <a href="http://127.0.0.1:8000/inbox/" style="display: inline-block; background: #007bff; color: white; text-decoration: none; padding: 10px 20px; border-radius: 5px;">Go to Inbox</a>
+        <p style="margin-top: 20px; color: #777;">Best,<br>Car Yard Team</p>
+    </div>
+</body>
+
+</html>

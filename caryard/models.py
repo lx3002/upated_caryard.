@@ -44,9 +44,17 @@ class Vehicle(models.Model):
 
 # ---------------- BOOKING MODEL ----------------
 class Booking(models.Model):
+
+    STATUS_CHOICES = (
+        ('PENDING', 'Pending'),
+        ('CONFIRMED', 'Confirmed'),
+        ('CANCELLED', 'Cancelled'),
+    )
+
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
     buyer = models.ForeignKey(Buyer, on_delete=models.CASCADE)
     date = models.DateTimeField(default=timezone.now)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
 
     def __str__(self):
         return f"{self.vehicle.title} booked by {self.buyer.user.username}"
@@ -115,3 +123,16 @@ class Messages(models.Model):
 
     def __str__(self):
         return f"{self.sender.username} to {self.receiver.username}: {self.content[:30]}"
+
+
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    message = models.CharField(max_length=255)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Notification for {self.user.username}"

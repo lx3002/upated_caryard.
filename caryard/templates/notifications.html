@@ -1,0 +1,21 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-4">
+    <h3 class="mb-4"><i class="fa fa-bell"></i> Notifications</h3>
+
+    {% if notifications %}
+    <ul class="list-group shadow-sm">
+        {% for note in notifications %}
+        <li class="list-group-item d-flex justify-content-between align-items-start {% if not note.is_read %}list-group-item-info{% endif %}">
+            <div>
+                <i class="fa fa-circle{% if note.is_read %}-check{% endif %} text-primary"></i> {{ note.message }}
+                <br>
+                <small class="text-muted">{{ note.created|date:"M d, Y H:i" }}</small>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div class="alert alert-info text-center mt-3">No notifications yet.</div>
+    {% endif %}
+</div>
+{% endblock %}

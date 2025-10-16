@@ -18,8 +18,8 @@ import io
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from django.utils.timezone import localtime
-
-from .models import Vehicle, Seller, Buyer, Booking, Comment, Rating, Payment, ChatbotLog, Messages
+import openai
+from .models import Vehicle, Seller, Buyer, Booking, Comment, Rating, Payment, ChatbotLog, Messages, Notification
 from .forms import BookingForm, CommentForm, SignupForm, VehicleForm, PaymentForm, MessageForm
 
 from django.shortcuts import render, redirect
@@ -425,32 +425,36 @@ def search(request):
 
 
 # ---------------- CHATBOT ----------------
+from openai import OpenAI
+from django.http import JsonResponse
+import json
+from django.conf import settings
+
+client = OpenAI(api_key=settings.OPENAI_API_KEY)
+
 def chatbot_response(request):
     if request.method == "POST":
         data = json.loads(request.body)
-        user_message = data.get("message", "").lower()
+        user_message = data.get("message", "")
 
-        if "hello" in user_message or "hi" in user_message:
-            bot_reply = "👋 Hello! Welcome to Car Yard. How can I assist you today?"
-        elif "car" in user_message or "vehicle" in user_message:
-            bot_reply = "🚗 We have many vehicles at affordable rates — feel free to explore!"
-        elif "price" in user_message or "cost" in user_message:
-            bot_reply = "💰 Our vehicles vary by price. Use the search filter to find one that fits your budget."
-        elif "book" in user_message:
-            bot_reply = "To book a vehicle, click on 'Book Now' from the vehicle card."
-        elif "payment" in user_message or "pay" in user_message:
-            bot_reply = "We accept payments via Stripe"
-        else:
-            bot_reply = "I'm not sure 🤔, but I can help you explore cars, bookings, and payments."
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are a helpful virtual assistant for Car Yard. Help users find cars, understand booking, prices, and dealership info."},
+                    {"role": "user", "content": user_message},
+                ],
+                temperature=0.6,
+                max_tokens=250
+            )
 
-        ChatbotLog.objects.create(
-            user=request.user if request.user.is_authenticated else None,
-            user_message=user_message,
-            bot_reply=bot_reply
-        )
-        return JsonResponse({"reply": bot_reply})
+            reply = response.choices[0].message.content.strip()
+            return JsonResponse({"reply": reply})
 
-    return JsonResponse({"error": "Invalid request"}, status=400)
+        except Exception as e:
+            print("Chatbot error:", e)
+            return JsonResponse({"reply": "Sorry, I’m having trouble responding right now. Please try again later."})
+
 
 
 
@@ -498,4 +502,22 @@ def send_message(request, username):
     return render(request, 'send_message.html', {'receiver': receiver})
 
 
+def profile(request):
+    try:
+        Buyer = Buyer.objects.get(User= request.user)
+        Booking = Booking.objects.filter(Buyer=Buyer).select_related('vehicle')
 
+    except Buyer.DoesNotExist:
+        Buyer = None
+        Booking = None
+    return render(request, 'profile.html', {
+        'Buyer': Buyer, 
+        'Booking': Booking
+        })
+
+
+@login_required
+def notifications_view(request):
+    notifications = Notification.objects.filter(user=request.user)
+    notifications.update(is_read=True)
+    return render(request, 'notifications.html', {'notifications': notifications})
