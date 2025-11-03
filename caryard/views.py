@@ -18,14 +18,24 @@ import io
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from django.utils.timezone import localtime
-import openai
-from .models import Vehicle, Seller, Buyer, Booking, Comment, Rating, Payment, ChatbotLog, Messages, Notification
+from openai import OpenAI
+from django.http import JsonResponse
+import json
+from django.conf import settings
+from .models import Vehicle, Seller, Buyer, Booking, Comment, Rating, Payment, ChatbotLog, Messages, Notification, Staff,ChatMessage
 from .forms import BookingForm, CommentForm, SignupForm, VehicleForm, PaymentForm, MessageForm
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from .models import Messages
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, get_object_or_404
+from .models import Staff, Booking
 
 # Stripe API key
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -390,6 +400,25 @@ def logout_view(request):
     logout(request)
     return redirect('home')
 
+def staff_signup(request):
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+        position = request.POST.get("position")
+        phone = request.POST.get("phone")
+
+        if User.objects.filter(username=username).exists():
+            messages.error(request, "Username already taken.")
+            return redirect("staff_signup")
+
+        user = User.objects.create_user(username=username, password=password)
+        Staff.objects.create(user=user, position=position, phone=phone, assigned_since=timezone.now())
+
+        messages.success(request, "Staff account created successfully! You can now log in.")
+        return redirect("login")
+
+    return render(request, "staff_signup.html")
+
 
 # ---------------- SEARCH ----------------
 def search(request):
@@ -521,3 +550,153 @@ def notifications_view(request):
     notifications = Notification.objects.filter(user=request.user)
     notifications.update(is_read=True)
     return render(request, 'notifications.html', {'notifications': notifications})
+
+
+
+# views.py
+
+
+
+@login_required
+def staff_dashboard(request):
+    # Get staff object for logged-in user
+    try:
+        staff = Staff.objects.get(user=request.user)
+    except Staff.DoesNotExist:
+        staff = None
+
+    # Superusers see all bookings; staff see only their assigned ones
+    if request.user.is_superuser:
+        bookings = Booking.objects.all()
+    elif staff:
+        bookings = Booking.objects.filter(staff=staff)
+    else:
+        bookings = []
+
+    return render(request, "staff_dashboard.html", {"staff": staff, "bookings": bookings})
+
+
+
+@login_required
+def update_booking_status(request, booking_id):
+    try:
+        staff = Staff.objects.get(user=request.user)
+    except Staff.DoesNotExist:
+        messages.error(request, "You are not authorized to perform this action.")
+        return redirect("home")
+
+    booking = get_object_or_404(Booking, id=booking_id, staff=staff)
+
+    if request.method == "POST":
+        new_status = request.POST.get("status")
+        if new_status in ["PENDING", "CONFIRMED", "CANCELLED"]:
+            booking.status = new_status
+            booking.save()
+
+            # ✅ Create in-app notification
+            Notification.objects.create(
+                user=booking.buyer.user,
+                message=f"Your booking for {booking.vehicle.title} is now {booking.status}.",
+            )
+
+            # ✅ Send email to buyer
+            send_booking_status_email(booking)
+
+            messages.success(request, f"Booking status updated to {new_status}. Buyer notified.")
+            return redirect("staff_dashboard")
+        else:
+            messages.error(request, "Invalid status selected.")
+
+    return render(request, "update_booking_status.html", {"booking": booking})
+
+
+
+def send_booking_status_email(booking):
+    """Send an email to the buyer when booking status changes."""
+    subject = f"Your booking for {booking.vehicle.title} has been updated"
+    context = {
+        "buyer": booking.buyer.user.username,
+        "vehicle": booking.vehicle.title,
+        "status": booking.status,
+        "price": booking.vehicle.price,
+    }
+    html_message = render_to_string("booking_status_email.html", context)
+    plain_message = strip_tags(html_message)
+    recipient = booking.buyer.user.email
+
+    send_mail(
+        subject,
+        plain_message,
+        "noreply@caryard.com",
+        [recipient],
+        html_message=html_message,
+        fail_silently=False,
+    )
+@login_required
+def assign_staff(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id)
+    staff_members = Staff.objects.all()
+
+    if request.method == 'POST':
+        staff_id = request.POST.get('staff_id')
+        selected_staff = get_object_or_404(Staff, id=staff_id)
+        booking.staff = selected_staff
+        booking.status = 'CONFIRMED'
+        booking.save()
+
+        messages.success(request, f"Booking for {booking.vehicle.title} assigned to {selected_staff.user.username}.")
+        return redirect('staff_dashboard')  # redirect wherever you prefer
+
+    return render(request, 'assign_staff.html', {
+        'booking': booking,
+        'staff_members': staff_members
+    })
+
+from django.contrib.admin.views.decorators import staff_member_required
+
+@staff_member_required
+def manage_bookings(request):
+    """Admin/manager view to assign staff to bookings."""
+    bookings = Booking.objects.select_related('vehicle', 'buyer', 'staff').all()
+    staff_members = Staff.objects.all()
+
+    if request.method == "POST":
+        booking_id = request.POST.get("booking_id")
+        staff_id = request.POST.get("staff_id")
+
+        if booking_id and staff_id:
+            try:
+                booking = Booking.objects.get(id=booking_id)
+                selected_staff = Staff.objects.get(id=staff_id)
+                booking.staff = selected_staff
+                booking.save()
+                messages.success(request, f"✅ {selected_staff.user.username} assigned to booking {booking.vehicle.title}.")
+            except (Booking.DoesNotExist, Staff.DoesNotExist):
+                messages.error(request, "❌ Invalid booking or staff selected.")
+        else:
+            messages.warning(request, "Please select both booking and staff before assigning.")
+
+        return redirect('manage_bookings')
+
+    return render(request, "manage_bookings.html", {
+        "bookings": bookings,
+        "staff_members": staff_members
+    })
+@login_required
+def chat_with_user(request, user_id):
+    """Direct chat between staff and a buyer."""
+    other_user = get_object_or_404(User, id=user_id)
+    messages_qs = ChatMessage.objects.filter(
+        (Q(sender=request.user, receiver=other_user) | Q(sender=other_user, receiver=request.user))
+    ).order_by('timestamp')
+
+    if request.method == "POST":
+        message = request.POST.get('message')
+        if message:
+            ChatMessage.objects.create(sender=request.user, receiver=other_user, content=message)
+            return redirect('chat_with_user', user_id=other_user.id)
+
+    return render(request, 'chat_with_user.html', {
+        'other_user': other_user,
+        'messages': messages_qs
+    })

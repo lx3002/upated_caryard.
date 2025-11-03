@@ -44,4 +44,13 @@ urlpatterns = [
   path('notifications/', views.notifications_view, name='notifications'),
 
 
+ # caryard/urls.py
+path('staff/dashboard/', views.staff_dashboard, name='staff_dashboard'),
+path('staff/booking/<int:booking_id>/update/', views.update_booking_status, name='update_booking_status'),
+path('staff/signup/', views.staff_signup, name='staff_signup'),
+path('assign-staff/<int:booking_id>/', views.assign_staff, name='assign_staff'),
+path('chat/<int:user_id>/', views.chat_with_user, name='chat_with_user'),
+path("manage/bookings/", views.manage_bookings, name="manage_bookings"),
+
+
 ]

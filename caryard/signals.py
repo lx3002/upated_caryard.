@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth.models import User
-from .models import Seller, Buyer, Messages, Booking,Notification
+from .models import Seller, Buyer, Messages, Booking,Notification, Staff
 from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
 from django.template.loader import render_to_string
@@ -138,3 +138,10 @@ def notify_on_message(sender, instance, created, **kwargs):
         email = EmailMultiAlternatives(subject, text_message, settings.DEFAULT_FROM_EMAIL, to_email)
         email.attach_alternative(html_message, "text/html")
         email.send(fail_silently=True)
+
+
+
+@receiver(post_save, sender=User)
+def create_staff_profile(sender,instance,created,**kwargs):
+    if created and instance.is_staff:
+     Staff.objects.get_or_create(user=instance)

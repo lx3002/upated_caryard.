@@ -17,7 +17,6 @@
         .navbar {
             background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%) !important;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-            border: none;
         }
         
         .navbar-brand {
@@ -64,11 +63,6 @@
             box-shadow: none;
         }
         
-        body {
-            background: transparent;
-        }
-        /* ✅ Clean alert color borders */
-        
         .alert-border-success {
             border-left: 5px solid #28a745 !important;
         }
@@ -94,77 +88,100 @@
             <a class="navbar-brand" href="{% url 'home' %}">
                 <i class="fa fa-car"></i> Car Yard
             </a>
+
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
+
+                    <!-- Common navigation -->
                     <li class="nav-item"><a class="nav-link" href="{% url 'home' %}"><i class="fa fa-home"></i> Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'search' %}"><i class="fa fa-search"></i> Search</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'add_vehicle' %}"><i class="fa fa-plus"></i> Add Vehicle</a></li>
 
                     {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'inbox' %}">
-                            <i class="fa fa-envelope"></i> Messages
-                        </a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'inbox' %}"><i class="fa fa-envelope"></i> Messages</a></li>
 
                     <li class="nav-item">
                         <a class="nav-link position-relative" href="{% url 'notifications' %}">
                             <i class="fa fa-bell"></i> {% if unread_notifications %}
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                            {{ unread_notifications }}
-      </span> {% endif %}
+                                    {{ unread_notifications }}
+                                </span> {% endif %}
                         </a>
                     </li>
 
+                    <!-- ✅ Staff Dashboard for staff -->
+                    {% if user.staff_set.exists %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'staff_dashboard' %}">
+                            <i class="fa fa-briefcase"></i> Staff Dashboard
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <!-- ✅ My Bookings for buyers -->
+                    {% if user.buyer_set.exists %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'my_bookings' %}">
+                            <i class="fa fa-list"></i> My Bookings
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <!-- ✅ Admin Panel for superusers -->
+                    {% if user.is_superuser %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/">
+                            <i class="fa fa-tools"></i> Admin Panel
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <!-- ✅ User dropdown (logout only) -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fa fa-user"></i> {{ user.username }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fa fa-sign-out-alt"></i> Logout</a></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'logout' %}">
+                                    <i class="fa fa-sign-out-alt"></i> Logout
+                                </a>
+                            </li>
                         </ul>
                     </li>
 
-
-
-
                     {% else %}
+                    <!-- Guest Links -->
                     <li class="nav-item"><a class="nav-link" href="{% url 'login' %}"><i class="fa fa-sign-in-alt"></i> Login</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'signup' %}"><i class="fa fa-user-plus"></i> Signup</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'staff_signup' %}"><i class="fa fa-briefcase"></i> Staff Signup</a></li>
                     {% endif %}
-
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- ✅ Global Message Alerts -->
+    <!-- ✅ Alerts -->
     <div class="container mt-4">
-        {% if messages %}
-        <div class="mt-2">
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm
-                {% if message.tags == 'success' %} alert-border-success
-                {% elif message.tags == 'error' or message.tags == 'danger' %} alert-border-danger
-                {% elif message.tags == 'warning' %} alert-border-warning
-                {% else %} alert-border-info {% endif %}" role="alert">
-
-                <i class="fa
-                    {% if message.tags == 'success' %} fa-check-circle
-                    {% elif message.tags == 'error' or message.tags == 'danger' %} fa-times-circle
-                    {% elif message.tags == 'warning' %} fa-exclamation-triangle
-                    {% else %} fa-info-circle {% endif %}">
+        {% if messages %} {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm
+                        {% if message.tags == 'success' %} alert-border-success
+                        {% elif message.tags == 'error' or message.tags == 'danger' %} alert-border-danger
+                        {% elif message.tags == 'warning' %} alert-border-warning
+                        {% else %} alert-border-info {% endif %}" role="alert">
+            <i class="fa
+                            {% if message.tags == 'success' %} fa-check-circle
+                            {% elif message.tags == 'error' or message.tags == 'danger' %} fa-times-circle
+                            {% elif message.tags == 'warning' %} fa-exclamation-triangle
+                            {% else %} fa-info-circle {% endif %}">
                 </i> {{ message }}
-
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            {% endfor %}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-        {% endif %}
+        {% endfor %} {% endif %}
     </div>
 
     <!-- ✅ Page Content -->
@@ -184,7 +201,9 @@
         <div class="card-footer">
             <form id="chatForm" class="d-flex">
                 <input type="text" id="chatInput" class="form-control form-control-sm" placeholder="Type a message..." required>
-                <button class="btn btn-primary btn-sm ms-2" type="submit"><i class="fa fa-paper-plane"></i></button>
+                <button class="btn btn-primary btn-sm ms-2" type="submit">
+                    <i class="fa fa-paper-plane"></i>
+                </button>
             </form>
         </div>
     </div>
@@ -198,7 +217,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // Chatbot
             let chatBox = document.getElementById("chatbot");
             let openBtn = document.getElementById("openChat");
             let closeBtn = document.getElementById("closeChat");
@@ -214,7 +232,6 @@
                 let userMessage = chatInput.value;
                 chatMessages.innerHTML += `<p><strong>You:</strong> ${userMessage}</p>`;
                 chatInput.value = "";
-
                 fetch("{% url 'chatbot' %}", {
                         method: "POST",
                         headers: {

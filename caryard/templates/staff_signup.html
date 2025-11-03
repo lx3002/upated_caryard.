@@ -1,0 +1,25 @@
+{% extends 'base.html' %} {% block content %}
+<div class="container mt-4">
+    <h2 class="fw-bold">👔 Register New Staff Member</h2>
+    <form method="POST" class="card p-4 shadow mt-3">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label>Username</label>
+            <input type="text" name="username" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label>Password</label>
+            <input type="password" name="password" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label>Position</label>
+            <input type="text" name="position" class="form-control" placeholder="e.g. Sales Assistant">
+        </div>
+        <div class="mb-3">
+            <label>Phone</label>
+            <input type="text" name="phone" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-success">Create Staff</button>
+    </form>
+</div>
+{% endblock %}

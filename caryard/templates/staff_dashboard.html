@@ -1,0 +1,73 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-4">
+    <h2 class="fw-bold">🚘 Welcome, {{ staff.user.username }}</h2>
+    <p class="text-muted">Position: {{ staff.position }}</p>
+
+    <hr> {% if user.is_superuser %}
+    <h4 class="mt-4 text-primary"><i class="fa fa-tasks"></i> Manage All Bookings</h4>
+    {% else %}
+    <h4 class="mt-4 text-primary"><i class="fa fa-clipboard-list"></i> My Assigned Bookings</h4>
+    {% endif %} {% if bookings %}
+    <div class="table-responsive mt-3">
+        <table class="table table-striped align-middle shadow-sm">
+            <thead class="table-dark">
+                <tr>
+                    <th>Vehicle</th>
+                    <th>Buyer</th>
+                    <th>Status</th>
+                    <th>Booking Date</th>
+                    {% if user.is_superuser %}
+                    <th>Assigned Staff</th>
+                    {% endif %}
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                <tr>
+                    <td>{{ booking.vehicle.title }}</td>
+                    <td>{{ booking.buyer.user.username }}</td>
+                    <td>
+                        {% if booking.status == 'CONFIRMED' %}
+                        <span class="badge bg-success">{{ booking.status }}</span> {% elif booking.status == 'PENDING' %}
+                        <span class="badge bg-warning text-dark">{{ booking.status }}</span> {% else %}
+                        <span class="badge bg-danger">{{ booking.status }}</span> {% endif %}
+                    </td>
+                    <td>{{ booking.date|date:"Y-m-d H:i" }}</td>
+
+                    {% if user.is_superuser %}
+                    <td>
+                        {% if booking.staff %}
+                        <span class="text-success"><i class="fa fa-check-circle"></i> {{ booking.staff.user.username }}</span> {% else %}
+                        <span class="text-muted">Not Assigned</span> {% endif %}
+                    </td>
+                    {% endif %}
+
+                    <td>
+                        {% if user.is_superuser %} {% if not booking.staff %}
+                        <a href="{% url 'assign_staff' booking.id %}" class="btn btn-sm btn-warning">
+                            <i class="fa fa-user-plus"></i> Assign
+                        </a>
+                        {% else %}
+                        <a href="{% url 'update_booking_status' booking.id %}" class="btn btn-sm btn-primary">
+                            <i class="fa fa-edit"></i> Update
+                        </a>
+                        {% endif %} {% else %} {% if booking.staff == staff %}
+                        <a href="{% url 'update_booking_status' booking.id %}" class="btn btn-sm btn-primary">
+                            <i class="fa fa-edit"></i> Update
+                        </a>
+                        {% else %}
+                        <span class="text-muted">No actions</span> {% endif %} {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-warning mt-4">
+        <i class="fa fa-info-circle"></i> No bookings found.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

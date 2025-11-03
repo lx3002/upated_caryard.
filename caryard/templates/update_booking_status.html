@@ -1,0 +1,24 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-4">
+    <div class="card shadow p-4">
+        <h3>Update Booking Status</h3>
+        <p><strong>Vehicle:</strong> {{ booking.vehicle.title }}</p>
+        <p><strong>Buyer:</strong> {{ booking.buyer.user.username }}</p>
+        <p><strong>Current Status:</strong> <span class="badge bg-info text-dark">{{ booking.status }}</span></p>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="status" class="form-label">Change Status:</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="PENDING" {% if booking.status == "PENDING" %}selected{% endif %}>Pending</option>
+                    <option value="CONFIRMED" {% if booking.status == "CONFIRMED" %}selected{% endif %}>Confirmed</option>
+                    <option value="CANCELLED" {% if booking.status == "CANCELLED" %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-success">Update</button>
+            <a href="{% url 'staff_dashboard' %}" class="btn btn-secondary ms-2">Back</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

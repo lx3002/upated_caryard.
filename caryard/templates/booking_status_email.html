@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Booking Status Update</title>
+</head>
+
+<body style="font-family: Arial, sans-serif; background-color:#f9f9f9; padding:20px;">
+    <div style="max-width:600px; margin:auto; background:white; border-radius:10px; padding:20px; box-shadow:0 0 10px rgba(0,0,0,0.1);">
+        <h2 style="color:#2c3e50;">🚗 Booking Update from Car Yard</h2>
+        <p>Dear {{ buyer }},</p>
+        <p>Your booking for the <strong>{{ vehicle }}</strong> has been updated to:</p>
+        <h3 style="color:#3498db;">{{ status }}</h3>
+
+        <p>The vehicle price is <strong>${{ price }}</strong>.</p>
+
+        <p>Thank you for using <strong>Car Yard</strong>! We’ll keep you updated with any new changes.</p>
+
+        <hr>
+        <small style="color:#888;">This is an automated message. Please do not reply.</small>
+    </div>
+</body>
+
+</html>

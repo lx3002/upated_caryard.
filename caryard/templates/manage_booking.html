@@ -1,0 +1,80 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-5">
+    <h2 class="fw-bold">🛠 Manage Bookings</h2>
+    <p class="text-muted">Assign staff members, monitor booking progress, and communicate with buyers.</p>
+    <hr> {% if bookings %}
+    <table class="table table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Vehicle</th>
+                <th>Buyer</th>
+                <th>Status / Progress</th>
+                <th>Assigned Staff</th>
+                <th>Booking Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for booking in bookings %}
+            <tr>
+                <td>{{ booking.vehicle.title }}</td>
+                <td>{{ booking.buyer.user.username }}</td>
+
+                <!-- ✅ Progress visualization -->
+                <td>
+                    <div class="progress" style="height: 20px;">
+                        {% if booking.status == 'PENDING' %}
+                        <div class="progress-bar bg-warning text-dark" role="progressbar" style="width: 25%;">Pending</div>
+                        {% elif booking.status == 'CONFIRMED' %}
+                        <div class="progress-bar bg-info" role="progressbar" style="width: 50%;">Confirmed</div>
+                        {% elif booking.status == 'IN_PROGRESS' %}
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: 75%;">In Progress</div>
+                        {% elif booking.status == 'COMPLETED' %}
+                        <div class="progress-bar bg-success" role="progressbar" style="width: 100%;">Completed</div>
+                        {% else %}
+                        <div class="progress-bar bg-danger" role="progressbar" style="width: 100%;">Cancelled</div>
+                        {% endif %}
+                    </div>
+                </td>
+
+                <!-- ✅ Assigned Staff -->
+                <td>
+                    {% if booking.staff %}
+                    <span class="text-success fw-bold">{{ booking.staff.user.username }}</span> {% else %}
+                    <span class="text-muted">Unassigned</span> {% endif %}
+                </td>
+
+                <td>{{ booking.date|date:"Y-m-d H:i" }}</td>
+
+                <!-- ✅ Actions -->
+                <td>
+                    <form method="POST" class="d-flex align-items-center">
+                        {% csrf_token %}
+                        <input type="hidden" name="booking_id" value="{{ booking.id }}">
+                        <select name="staff_id" class="form-select form-select-sm me-2" required>
+                            <option value="">-- Select Staff --</option>
+                            {% for s in staff_members %}
+                            <option value="{{ s.id }}" {% if booking.staff and booking.staff.id == s.id %}selected{% endif %}>
+                                {{ s.user.username }} ({{ s.position }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary me-2">Assign</button>
+
+                        <!-- ✅ Message Button -->
+                        {% if booking.staff %}
+                        <a href="{% url 'chat_with_user' booking.buyer.user.id %}" class="btn btn-sm btn-outline-success">
+                            <i class="fa fa-comment"></i> Message Buyer
+                        </a>
+                        {% endif %}
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-warning">No bookings found.</div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+
+
+__pycache__/
+*.py[cod]
+*.pkl
+
+# Virtual environment
+myVenv/
+
+# Environment variables
+.env
+.env.local
+
+# IDE configs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -43,8 +43,17 @@ class Vehicle(models.Model):
 
 
 # ---------------- BOOKING MODEL ----------------
-class Booking(models.Model):
+class Staff(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    position = models.CharField(max_length=100, blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    assigned_since = models.DateTimeField(default=timezone.now)
 
+    def __str__(self):
+        return f"{self.user.username} ({self.position or 'Staff'})"
+
+
+class Booking(models.Model):
     STATUS_CHOICES = (
         ('PENDING', 'Pending'),
         ('CONFIRMED', 'Confirmed'),
@@ -54,10 +63,12 @@ class Booking(models.Model):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
     buyer = models.ForeignKey(Buyer, on_delete=models.CASCADE)
     date = models.DateTimeField(default=timezone.now)
+    staff = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, blank=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
 
     def __str__(self):
         return f"{self.vehicle.title} booked by {self.buyer.user.username}"
+
 
 
 # ---------------- COMMENT MODEL ----------------
@@ -136,3 +147,23 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notification for {self.user.username}"
+    
+
+
+
+    
+
+class ChatMessage(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chat_sent_messages')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chat_received_messages')
+    message = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['timestamp']
+
+    def __str__(self):
+        return f"{self.sender.username} to {self.receiver.username}: {self.message[:30]}"
+
+

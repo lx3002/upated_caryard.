@@ -6,3 +6,8 @@ redis-server redis.conf
 
 redis-cli ping
 
+augu
+gusto04
+
+lupa
+lupa@1234

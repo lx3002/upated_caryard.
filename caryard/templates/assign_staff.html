@@ -1,0 +1,29 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-5">
+    <div class="card shadow-lg">
+        <div class="card-header bg-dark text-white">
+            <h4><i class="fa fa-user-tie"></i> Assign Staff to Booking</h4>
+        </div>
+        <div class="card-body">
+            <p><strong>Vehicle:</strong> {{ booking.vehicle.title }}</p>
+            <p><strong>Buyer:</strong> {{ booking.buyer.user.username }}</p>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Select Staff</label>
+                    <select name="staff_id" class="form-select" required>
+                        <option value="">-- Choose Staff --</option>
+                        {% for staff in staff_members %}
+                        <option value="{{ staff.id }}">{{ staff.user.username }} - {{ staff.position }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa fa-check"></i> Assign
+                </button>
+                <a href="{% url 'staff_dashboard' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
