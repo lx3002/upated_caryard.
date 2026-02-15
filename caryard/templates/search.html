@@ -1,0 +1,193 @@
+{% extends "base.html" %} {% load static %} {% block content %}
+<style>
+    .search-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 60px 20px;
+        border-radius: 15px;
+        margin-bottom: 40px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .search-form-card {
+        background: white;
+        border-radius: 15px;
+        padding: 40px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .search-input-group {
+        position: relative;
+    }
+    
+    .search-input-group .form-control {
+        padding-left: 50px;
+        border-radius: 25px;
+        border: 2px solid #e9ecef;
+        font-size: 1.1rem;
+        height: 55px;
+    }
+    
+    .search-input-group .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #667eea;
+        font-size: 1.2rem;
+        z-index: 10;
+    }
+    
+    .filter-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 25px;
+        margin-top: 20px;
+    }
+    
+    .filter-title {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+    }
+    
+    .price-range-inputs {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+    
+    .price-input {
+        flex: 1;
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        padding: 10px 15px;
+    }
+    
+    .search-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 25px;
+        padding: 15px 40px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s;
+        width: 100%;
+        margin-top: 20px;
+    }
+    
+    .search-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        color: white;
+    }
+</style>
+
+<div class="container">
+    <!-- Hero Section -->
+    <div class="search-hero text-center">
+        <h1 class="display-4 fw-bold mb-3">
+            <i class="fa fa-search"></i> Find Your Perfect Vehicle
+        </h1>
+        <p class="lead">Search through our extensive collection of vehicles</p>
+    </div>
+
+    <!-- Search Form -->
+    <div class="search-form-card">
+        <form method="GET" action="{% url 'search' %}">
+            <!-- Main Search Input -->
+            <div class="search-input-group mb-4">
+                <i class="fa fa-search search-icon"></i>
+                <input 
+                    type="text" 
+                    name="q" 
+                    class="form-control" 
+                    placeholder="Search by vehicle name, description, or seller..."
+                    value="{{ request.GET.q }}"
+                    autofocus
+                >
+            </div>
+
+            <!-- Advanced Filters -->
+            <div class="filter-section">
+                <div class="filter-title">
+                    <i class="fa fa-filter"></i> Advanced Filters
+                </div>
+                
+                <div class="row g-3">
+                    <!-- Make/Model Filter -->
+                    <div class="col-md-6">
+                        <label for="make" class="form-label fw-bold">
+                            <i class="fa fa-car"></i> Vehicle Make/Model
+                        </label>
+                        <input 
+                            type="text" 
+                            name="make" 
+                            id="make"
+                            class="form-control" 
+                            placeholder="e.g., Toyota, Honda, BMW..."
+                            value="{{ request.GET.make }}"
+                        >
+                    </div>
+
+                    <!-- Price Range -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">
+                            <i class="fa fa-dollar-sign"></i> Price Range
+                        </label>
+                        <div class="price-range-inputs">
+                            <input 
+                                type="number" 
+                                name="min_price" 
+                                class="form-control price-input" 
+                                placeholder="Min Price"
+                                value="{{ request.GET.min_price }}"
+                                min="0"
+                                step="100"
+                            >
+                            <span class="text-muted">to</span>
+                            <input 
+                                type="number" 
+                                name="max_price" 
+                                class="form-control price-input" 
+                                placeholder="Max Price"
+                                value="{{ request.GET.max_price }}"
+                                min="0"
+                                step="100"
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="search-btn">
+                <i class="fa fa-search"></i> Search Vehicles
+            </button>
+        </form>
+    </div>
+
+    <!-- Quick Search Suggestions -->
+    <div class="text-center mb-4">
+        <p class="text-muted mb-2">Popular Searches:</p>
+        <div class="d-flex flex-wrap justify-content-center gap-2">
+            <a href="{% url 'search' %}?q=Toyota" class="badge bg-primary p-2 px-3">Toyota</a>
+            <a href="{% url 'search' %}?q=Honda" class="badge bg-primary p-2 px-3">Honda</a>
+            <a href="{% url 'search' %}?q=BMW" class="badge bg-primary p-2 px-3">BMW</a>
+            <a href="{% url 'search' %}?q=Mercedes" class="badge bg-primary p-2 px-3">Mercedes</a>
+            <a href="{% url 'search' %}?q=SUV" class="badge bg-primary p-2 px-3">SUV</a>
+            <a href="{% url 'search' %}?q=Sedan" class="badge bg-primary p-2 px-3">Sedan</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

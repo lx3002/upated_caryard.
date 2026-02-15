@@ -51,6 +51,7 @@ path('staff/signup/', views.staff_signup, name='staff_signup'),
 path('assign-staff/<int:booking_id>/', views.assign_staff, name='assign_staff'),
 path('chat/<int:user_id>/', views.chat_with_user, name='chat_with_user'),
 path("manage/bookings/", views.manage_bookings, name="manage_bookings"),
+path("my-bookings/", views.my_bookings, name="my_bookings"),
 
 
 ]

@@ -1,71 +1,365 @@
-{% extends "base.html" %} {% block content %}
-<div class="card shadow p-4 mb-4">
-    <!-- Vehicle Image -->
-    <img src="{{ vehicle.image.url }}" class="img-fluid mb-3 rounded" alt="{{ vehicle.title }}">
+{% extends "base.html" %} {% load static %} {% block content %}
+<style>
+    .vehicle-detail-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px;
+        border-radius: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .vehicle-image-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        margin-bottom: 30px;
+    }
+    
+    .vehicle-image-container img {
+        width: 100%;
+        height: 500px;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    
+    .vehicle-image-container:hover img {
+        transform: scale(1.05);
+    }
+    
+    .detail-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .price-badge-large {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+        font-size: 2rem;
+        font-weight: bold;
+        padding: 20px 40px;
+        border-radius: 15px;
+        display: inline-block;
+        box-shadow: 0 5px 15px rgba(17, 153, 142, 0.3);
+    }
+    
+    .booking-section {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-radius: 15px;
+        padding: 30px;
+        margin-top: 30px;
+    }
+    
+    .booking-option-card {
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 20px;
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .booking-option-card:hover {
+        border-color: #667eea;
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
+    }
+    
+    .booking-option-card.active {
+        border-color: #667eea;
+        background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+    }
+    
+    .feature-badge {
+        display: inline-block;
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 8px 16px;
+        border-radius: 20px;
+        margin: 5px;
+        font-size: 0.9rem;
+    }
+    
+    .comment-item {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        border-left: 4px solid #667eea;
+    }
+    
+    .rating-stars {
+        color: #ffc107;
+        font-size: 1.5rem;
+    }
+</style>
 
-    <!-- Vehicle Details -->
-    <h2 class="fw-bold">{{ vehicle.title }}</h2>
-    <p>{{ vehicle.description }}</p>
-    <p class="fw-bold text-success">Price: ${{ vehicle.price }}</p>
-
-    <!-- Message Seller -->
-    {% if vehicle.seller %}
-    <div class="mt-3 mb-4">
-        <a href="{% url 'send_message' vehicle.seller.user.username %}" class="btn btn-outline-secondary">
-            <i class="fa fa-envelope"></i> Message Seller
-        </a>
+<div class="container-fluid">
+    <!-- Hero Section -->
+    <div class="vehicle-detail-hero text-center">
+        <h1 class="display-4 fw-bold mb-3">{{ vehicle.title }}</h1>
+        <p class="lead">Explore this amazing vehicle in detail</p>
     </div>
-    {% else %}
-    <div class="alert alert-warning mt-3">
-        <i class="fa fa-exclamation-circle"></i> Seller information not available.
-    </div>
-    {% endif %}
 
+    <div class="row">
+        <!-- Left Column: Image and Details -->
+        <div class="col-lg-8">
+            <!-- Vehicle Image -->
+            <div class="vehicle-image-container">
+                <img src="{{ vehicle.image.url }}" alt="{{ vehicle.title }}" class="img-fluid">
+            </div>
 
+            <!-- Vehicle Details Card -->
+            <div class="detail-card">
+                <h3 class="fw-bold mb-4">
+                    <i class="fa fa-info-circle"></i> Vehicle Details
+                </h3>
+                <div class="mb-4">
+                    <h5 class="text-muted mb-3">Description</h5>
+                    <p class="lead" style="line-height: 1.8;">{{ vehicle.description }}</p>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">
+                            <i class="fa fa-user"></i> Seller
+                        </h6>
+                        <p class="fw-bold">{{ vehicle.seller.user.username }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">
+                            <i class="fa fa-star"></i> Rating
+                        </h6>
+                        <div class="rating-stars">
+                            {% if vehicle.average_rating %}
+                                {% for i in "12345"|make_list %}
+                                    {% if forloop.counter <= vehicle.average_rating|floatformat:0|add:0 %}
+                                        <i class="fa fa-star"></i>
+                                    {% else %}
+                                        <i class="fa fa-star-o"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                <span class="ms-2">({{ vehicle.average_rating|floatformat:1 }})</span>
+                            {% else %}
+                                <span class="text-muted">No ratings yet</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
 
-    <!-- Booking Form -->
-    <div class="mt-4">
-        <h4 class="fw-semibold">Book This Vehicle</h4>
-        <form method="post" action="{% url 'book_vehicle' vehicle.pk %}">
-            {% csrf_token %} {{ booking_form.as_p }}
-            <button type="submit" class="btn btn-success mt-2">Book Now</button>
-        </form>
-    </div>
+                <!-- Contact Seller -->
+                {% if vehicle.seller %}
+                <div class="d-flex gap-2">
+                    <a href="{% url 'send_message' vehicle.seller.user.username %}" class="btn btn-primary btn-lg">
+                        <i class="fa fa-envelope"></i> Message Seller
+                    </a>
+                </div>
+                {% endif %}
+            </div>
 
-    <!-- Comments Section -->
-    <div class="mt-5">
-        <h4 class="fw-semibold">Comments</h4>
-        <div id="comments" class="mt-3">
-            {% for c in vehicle.comment_set.all %}
-            <p><strong>{{ c.user.username }}:</strong> {{ c.content }}</p>
-            {% empty %}
-            <p class="text-muted">No comments yet.</p>
-            {% endfor %}
+            <!-- Comments Section -->
+            <div class="detail-card">
+                <h4 class="fw-bold mb-4">
+                    <i class="fa fa-comments"></i> Comments & Reviews
+                    <span class="badge bg-secondary ms-2">{{ vehicle.comment_set.count }}</span>
+                </h4>
+                
+                <div id="comments" class="mb-4">
+                    {% for comment in vehicle.comment_set.all %}
+                    <div class="comment-item">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <strong class="text-primary">{{ comment.user.username }}</strong>
+                            <small class="text-muted">{{ comment.created|date:"M d, Y H:i" }}</small>
+                        </div>
+                        <p class="mb-0">{{ comment.content }}</p>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center py-4">No comments yet. Be the first to comment!</p>
+                    {% endfor %}
+                </div>
+
+                {% if user.is_authenticated %}
+                <form id="comment-form" method="post" action="{% url 'ajax_comment' %}" class="mt-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="vehicle_id" value="{{ vehicle.id }}">
+                    <div class="mb-3">
+                        <textarea name="content" class="form-control" rows="3" placeholder="Write your comment or review..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-paper-plane"></i> Post Comment
+                    </button>
+                </form>
+                {% else %}
+                <div class="alert alert-info text-center">
+                    <i class="fa fa-info-circle"></i> Please <a href="{% url 'login' %}" class="alert-link">log in</a> to comment.
+                </div>
+                {% endif %}
+            </div>
         </div>
 
-        {% if user.is_authenticated %}
-        <form id="comment-form" method="post" action="{% url 'ajax_comment' %}" class="mt-3">
-            {% csrf_token %}
-            <input type="hidden" name="vehicle_id" value="{{ vehicle.id }}">
-            <textarea name="content" class="form-control mb-2" placeholder="Write a comment..." required></textarea>
-            <button class="btn btn-primary">Add Comment</button>
-        </form>
-        {% else %}
-        <p class="text-muted mt-3">Please <a href="{% url 'login' %}">log in</a> to comment.</p>
-        {% endif %}
+        <!-- Right Column: Price and Booking -->
+        <div class="col-lg-4">
+            <!-- Price Card -->
+            <div class="detail-card text-center">
+                <h5 class="text-muted mb-3">Price</h5>
+                <div class="price-badge-large mb-4">
+                    ${{ vehicle.price|floatformat:2 }}
+                </div>
+            </div>
+
+            <!-- Booking Section -->
+            {% if user.is_authenticated %}
+            <div class="booking-section">
+                <h4 class="fw-bold mb-4 text-center">
+                    <i class="fa fa-calendar-check"></i> Book Now
+                </h4>
+                
+                <form method="post" action="{% url 'book_vehicle' vehicle.pk %}" id="bookingForm">
+                    {% csrf_token %}
+                    
+                    <!-- Booking Type Selection -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold mb-3">Select Booking Type:</label>
+                        
+                        <!-- Vehicle Purchase Option -->
+                        <div class="booking-option-card" onclick="selectBookingType('VEHICLE')">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="booking_type" id="booking_vehicle" value="VEHICLE" checked>
+                                <label class="form-check-label w-100" for="booking_vehicle">
+                                    <h5 class="mb-2">
+                                        <i class="fa fa-car text-primary"></i> Purchase Vehicle
+                                    </h5>
+                                    <p class="text-muted mb-0">Book this vehicle for purchase. You'll be redirected to secure payment.</p>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Tour Option -->
+                        <div class="booking-option-card" onclick="selectBookingType('TOUR')">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="booking_type" id="booking_tour" value="TOUR">
+                                <label class="form-check-label w-100" for="booking_tour">
+                                    <h5 class="mb-2">
+                                        <i class="fa fa-map-marker-alt text-success"></i> Car Yard Tour
+                                    </h5>
+                                    <p class="text-muted mb-0">Schedule a tour of our car yard to see this and other vehicles in person.</p>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tour Date (shown only for tour booking) -->
+                    <div class="mb-3" id="tourDateField" style="display: none;">
+                        <label for="tour_date" class="form-label fw-bold">
+                            <i class="fa fa-calendar"></i> Preferred Tour Date & Time
+                        </label>
+                        <input type="datetime-local" name="tour_date" id="tour_date" class="form-control">
+                        <small class="text-muted">Select when you'd like to visit our car yard</small>
+                    </div>
+
+                    <!-- Notes Field -->
+                    <div class="mb-4">
+                        <label for="notes" class="form-label fw-bold">
+                            <i class="fa fa-sticky-note"></i> Additional Notes (Optional)
+                        </label>
+                        <textarea name="notes" id="notes" class="form-control" rows="3" placeholder="Any special requirements or questions..."></textarea>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-success btn-lg w-100">
+                        <i class="fa fa-check-circle"></i> Confirm Booking
+                    </button>
+                </form>
+            </div>
+            {% else %}
+            <div class="detail-card text-center">
+                <h5 class="mb-3">Want to Book This Vehicle?</h5>
+                <p class="text-muted mb-4">Please log in to make a booking</p>
+                <a href="{% url 'login' %}" class="btn btn-primary btn-lg w-100">
+                    <i class="fa fa-sign-in-alt"></i> Login to Book
+                </a>
+            </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 
-<!-- AJAX Comment Script -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
+    // Handle booking type selection
+    function selectBookingType(type) {
+        const tourDateField = document.getElementById('tourDateField');
+        const tourDateInput = document.getElementById('tour_date');
+        
+        if (type === 'TOUR') {
+            tourDateField.style.display = 'block';
+            tourDateInput.required = true;
+            // Update card active state
+            document.querySelectorAll('.booking-option-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            event.currentTarget.closest('.booking-option-card').classList.add('active');
+        } else {
+            tourDateField.style.display = 'none';
+            tourDateInput.required = false;
+            // Update card active state
+            document.querySelectorAll('.booking-option-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            event.currentTarget.closest('.booking-option-card').classList.add('active');
+        }
+    }
+
+    // Initialize active state
+    document.querySelectorAll('.booking-option-card').forEach(card => {
+        const radio = card.querySelector('input[type="radio"]');
+        if (radio && radio.checked) {
+            card.classList.add('active');
+        }
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                selectBookingType(this.value);
+            }
+        });
+    });
+
+    // Handle comment form submission
     $("#comment-form").on("submit", function(e) {
         e.preventDefault();
-        $.post($(this).attr("action"), $(this).serialize(), function(data) {
-            if (data.ok) {
-                $("#comments").append(
-                    "<p><strong>" + data.user + ":</strong> " + data.content + "</p>"
-                );
-                $("#comment-form textarea").val("");
+        const form = $(this);
+        const commentsDiv = $("#comments");
+        
+        $.ajax({
+            url: form.attr("action"),
+            method: "POST",
+            data: form.serialize(),
+            success: function(data) {
+                if (data.ok) {
+                    const commentHtml = `
+                        <div class="comment-item">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <strong class="text-primary">${data.user}</strong>
+                                <small class="text-muted">${data.created}</small>
+                            </div>
+                            <p class="mb-0">${data.content}</p>
+                        </div>
+                    `;
+                    commentsDiv.append(commentHtml);
+                    form.find('textarea').val('');
+                    
+                    // Scroll to new comment
+                    $('html, body').animate({
+                        scrollTop: commentsDiv.children().last().offset().top - 100
+                    }, 500);
+                }
+            },
+            error: function() {
+                alert('Error posting comment. Please try again.');
             }
         });
     });

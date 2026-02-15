@@ -9,6 +9,8 @@ from django.core.mail import EmailMessage, BadHeaderError
 from django.template.loader import render_to_string
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.admin.views.decorators import staff_member_required
+
 from django.conf import settings
 import re
 import json
@@ -17,7 +19,8 @@ from django.urls import reverse
 import io
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
-from django.utils.timezone import localtime
+from django.utils.timezone import localtime, make_aware
+from datetime import datetime
 from openai import OpenAI
 from django.http import JsonResponse
 import json
@@ -66,8 +69,12 @@ def send_invoice_email(booking, payment):
         p.setFont("Helvetica", 12)
         p.drawString(50, 770, f"Customer: {booking.buyer.user.username}")
         p.drawString(50, 750, f"Email: {booking.buyer.user.email}")
-        p.drawString(50, 730, f"Vehicle: {booking.vehicle.title}")
-        p.drawString(50, 710, f"Price: ${booking.vehicle.price}")
+        if booking.vehicle:
+            p.drawString(50, 730, f"Vehicle: {booking.vehicle.title}")
+            p.drawString(50, 710, f"Price: ${booking.vehicle.price}")
+        else:
+            p.drawString(50, 730, f"Booking Type: Car Yard Tour")
+            p.drawString(50, 710, f"Tour Date: {booking.tour_date.strftime('%Y-%m-%d %H:%M') if booking.tour_date else 'TBD'}")
         p.drawString(50, 690, f"Payment Method: {payment.method}")
         p.drawString(50, 670, f"Payment Date: {payment.created.strftime('%Y-%m-%d %H:%M')}")
         p.drawString(50, 640, "Thank you for your purchase!")
@@ -97,17 +104,17 @@ def send_invoice_email(booking, payment):
                         <td style="padding:8px;">{booking.buyer.user.email}</td>
                     </tr>
                     <tr>
-                        <td style="padding:8px; font-weight:bold;">Vehicle:</td>
-                        <td style="padding:8px;">{booking.vehicle.title}</td>
+                        <td style="padding:8px; font-weight:bold;">{'Vehicle:' if booking.vehicle else 'Booking Type:'}</td>
+                        <td style="padding:8px;">{booking.vehicle.title if booking.vehicle else 'Car Yard Tour'}</td>
                     </tr>
                     <tr>
                         <td style="padding:8px; font-weight:bold;">Payment Method:</td>
                         <td style="padding:8px;">{payment.method}</td>
                     </tr>
-                    <tr>
+                    {f'''<tr>
                         <td style="padding:8px; font-weight:bold;">Amount Paid:</td>
                         <td style="padding:8px; color:#27ae60; font-size:16px;"><b>${booking.vehicle.price:,.2f}</b></td>
-                    </tr>
+                    </tr>''' if booking.vehicle else ''}
                     <tr>
                         <td style="padding:8px; font-weight:bold;">Date:</td>
                         <td style="padding:8px;">{payment.created.strftime('%Y-%m-%d %H:%M')}</td>
@@ -144,13 +151,68 @@ def send_invoice_email(booking, payment):
         return False, f"Email sending failed: {str(e)}"
 
 
-        # ---- Send Email ----
-        email = EmailMessage(subject, message, to=[recipient])
-        email.attach("invoice.pdf", pdf, "application/pdf")
+def send_tour_booking_email(booking):
+    """Send confirmation email for car yard tour booking."""
+    try:
+        recipient = booking.buyer.user.email
 
+        if not validate_email_address(recipient):
+            return False, "Invalid email format."
+
+        tour_date_str = booking.tour_date.strftime('%Y-%m-%d %H:%M') if booking.tour_date else "To be confirmed"
+        
+        subject = "✅ Car Yard Tour Booking Confirmed"
+        html_content = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; background-color:#f9f9f9; padding:20px;">
+            <div style="max-width:600px; margin:auto; background:white; border-radius:10px; padding:20px; box-shadow:0 0 10px rgba(0,0,0,0.1);">
+                <h2 style="text-align:center; color:#2c3e50;"> Car Yard Tour Confirmation</h2>
+                <p style="text-align:center; color:#7f8c8d;">Thank you for booking a tour! We're excited to show you around.</p>
+
+                <hr style="border:none; border-top:2px solid #3498db; width:80%; margin:20px auto;">
+
+                <table style="width:100%; border-collapse:collapse; margin-top:20px;">
+                    <tr>
+                        <td style="padding:8px; font-weight:bold;">Customer:</td>
+                        <td style="padding:8px;">{booking.buyer.user.username}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px; font-weight:bold;">Email:</td>
+                        <td style="padding:8px;">{booking.buyer.user.email}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px; font-weight:bold;">Tour Date:</td>
+                        <td style="padding:8px; color:#27ae60; font-size:16px;"><b>{tour_date_str}</b></td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px; font-weight:bold;">Booking Status:</td>
+                        <td style="padding:8px;"><span style="background:#ffc107; color:#000; padding:5px 10px; border-radius:5px;">{booking.status}</span></td>
+                    </tr>
+                    {f'''<tr>
+                        <td style="padding:8px; font-weight:bold;">Notes:</td>
+                        <td style="padding:8px;">{booking.notes}</td>
+                    </tr>''' if booking.notes else ''}
+                </table>
+
+                <hr style="border:none; border-top:1px solid #ccc; margin:20px 0;">
+                <p style="color:#7f8c8d; font-size:14px;">
+                    Our team will contact you shortly to confirm the tour details. If you have any questions, please don't hesitate to reach out.
+                </p>
+
+                <p style="text-align:center; color:#555;">
+                    We look forward to seeing you at <b>Car Yard</b>! 
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+
+        email = EmailMessage(subject, html_content, to=[recipient])
+        email.content_subtype = "html"
         email.send(fail_silently=False)
-        print(f"✅ Email sent to {recipient}")
-        return True, "Invoice sent successfully!"
+
+        print(f"✅ Tour booking email sent to {recipient}")
+        return True, "Tour confirmation email sent successfully!"
 
     except BadHeaderError:
         print("❌ Bad email header detected.")
@@ -200,26 +262,50 @@ def book_vehicle(request, pk):
     buyer, _ = Buyer.objects.get_or_create(user=request.user)
 
     if request.method == "POST":
-        form = BookingForm(request.POST)
-        if form.is_valid():
-            booking = form.save(commit=False)
-            booking.vehicle = vehicle
-            booking.buyer = buyer
-            booking.save()
+        booking_type = request.POST.get('booking_type', 'VEHICLE')
+        tour_date_str = request.POST.get('tour_date')
+        notes = request.POST.get('notes', '')
+        
+        # Parse tour_date string to datetime object if provided
+        tour_date = None
+        if tour_date_str:
+            try:
+                # Parse the datetime-local format: "YYYY-MM-DDTHH:MM"
+                tour_date = datetime.strptime(tour_date_str, '%Y-%m-%dT%H:%M')
+                # Make it timezone-aware
+                tour_date = make_aware(tour_date)
+            except (ValueError, TypeError):
+                tour_date = None
+        
+        # Create booking
+        booking = Booking.objects.create(
+            booking_type=booking_type,
+            vehicle=vehicle if booking_type == 'VEHICLE' else None,
+            buyer=buyer,
+            tour_date=tour_date,
+            notes=notes
+        )
 
-            # ✅ Create Stripe checkout session
+        if booking_type == 'VEHICLE':
+            # For vehicle purchase, redirect to Stripe payment
             checkout_session = create_stripe_checkout_session(request, booking)
-
             booking.stripe_session_id = checkout_session.id
             booking.save()
-
             return redirect(checkout_session.url, code=303)
+        else:
+            # For tour booking, send confirmation email and redirect
+            send_tour_booking_email(booking)
+            messages.success(request, "Tour booking confirmed! Check your email for details.")
+            return redirect("vehicle_detail", pk=pk)
 
     return redirect("vehicle_detail", pk=pk)
 
 
 # ✅ Helper: Stripe Checkout
 def create_stripe_checkout_session(request, booking):
+    if not booking.vehicle:
+        raise ValueError("Cannot create checkout session for tour bookings")
+    
     session = stripe.checkout.Session.create(
         payment_method_types=["card"],
         line_items=[{
@@ -269,19 +355,23 @@ def payment_view(request, booking_id):
 def payment_success(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id, buyer__user=request.user)
 
-    payment = Payment.objects.create(
-        booking=booking,
-        buyer=booking.buyer,
-        amount=booking.vehicle.price,
-        method="Stripe"
-    )
+    # Only create payment for vehicle purchases
+    if booking.booking_type == 'VEHICLE' and booking.vehicle:
+        payment = Payment.objects.create(
+            booking=booking,
+            buyer=booking.buyer,
+            amount=booking.vehicle.price,
+            method="Stripe"
+        )
 
-    email_sent, email_message = send_invoice_email(booking, payment)
+        email_sent, email_message = send_invoice_email(booking, payment)
 
-    if email_sent:
-        messages.success(request, f"Payment successful! {email_message}")
+        if email_sent:
+            messages.success(request, f"Payment successful! {email_message}")
+        else:
+            messages.error(request, f"Payment successful, but invoice failed: {email_message}")
     else:
-        messages.error(request, f"Payment successful, but invoice failed: {email_message}")
+        messages.success(request, "Booking confirmed successfully!")
 
     return redirect("home")
 
@@ -406,15 +496,28 @@ def staff_signup(request):
         password = request.POST.get("password")
         position = request.POST.get("position")
         phone = request.POST.get("phone")
+        email = request.POST.get("email", "")
 
         if User.objects.filter(username=username).exists():
             messages.error(request, "Username already taken.")
             return redirect("staff_signup")
 
-        user = User.objects.create_user(username=username, password=password)
+        if User.objects.filter(email=email).exists() and email:
+            messages.error(request, "Email already registered.")
+            return redirect("staff_signup")
+
+        # Create user with staff privileges
+        user = User.objects.create_user(
+            username=username, 
+            password=password,
+            email=email if email else f"{username}@caryard.com"
+        )
+        user.is_staff = True  # Allow access to staff dashboard
+        user.save()
+        
         Staff.objects.create(user=user, position=position, phone=phone, assigned_since=timezone.now())
 
-        messages.success(request, "Staff account created successfully! You can now log in.")
+        messages.success(request, "Staff account created successfully! You can now log in and access your dashboard.")
         return redirect("login")
 
     return render(request, "staff_signup.html")
@@ -422,12 +525,14 @@ def staff_signup(request):
 
 # ---------------- SEARCH ----------------
 def search(request):
-    query = request.GET.get("q", "")
-    make = request.GET.get("make", "")
-    price_range = request.GET.get("price", "")
+    query = request.GET.get("q", "").strip()
+    make = request.GET.get("make", "").strip()
+    min_price = request.GET.get("min_price", "")
+    max_price = request.GET.get("max_price", "")
 
-    vehicles = Vehicle.objects.all()
+    vehicles = Vehicle.objects.all().order_by('-created')
 
+    # Search by query (title, description, or seller)
     if query:
         vehicles = vehicles.filter(
             Q(title__icontains=query) |
@@ -435,21 +540,39 @@ def search(request):
             Q(seller__user__username__icontains=query)
         )
 
+    # Filter by make/model
     if make:
-        vehicles = vehicles.filter(title__icontains=make)
+        vehicles = vehicles.filter(
+            Q(title__icontains=make) |
+            Q(description__icontains=make)
+        )
 
-    if price_range:
+    # Filter by price range
+    if min_price:
         try:
-            min_price, max_price = price_range.split("-")
-            vehicles = vehicles.filter(price__gte=min_price, price__lte=max_price)
-        except ValueError:
+            vehicles = vehicles.filter(price__gte=float(min_price))
+        except (ValueError, TypeError):
             pass
 
-    return render(request, "search_results.html", {
+    if max_price:
+        try:
+            vehicles = vehicles.filter(price__lte=float(max_price))
+        except (ValueError, TypeError):
+            pass
+
+    # Determine which template to use
+    # If there's a search query, show results; otherwise show search form
+    if query or make or min_price or max_price:
+        template = "search_results.html"
+    else:
+        template = "search.html"
+
+    return render(request, template, {
         "vehicles": vehicles,
         "query": query,
         "make": make,
-        "price_range": price_range,
+        "min_price": min_price,
+        "max_price": max_price,
     })
 
 
@@ -464,25 +587,133 @@ client = OpenAI(api_key=settings.OPENAI_API_KEY)
 def chatbot_response(request):
     if request.method == "POST":
         data = json.loads(request.body)
-        user_message = data.get("message", "")
+        user_message = data.get("message", "").lower().strip()
+
+        # Get user context
+        user = request.user if request.user.is_authenticated else None
+        username = user.username if user else "Guest"
+        
+        # Get available vehicles count
+        vehicle_count = Vehicle.objects.count()
+        
+        # Enhanced system prompt with app-specific knowledge
+        system_prompt = f"""You are a friendly and knowledgeable virtual assistant for Car Yard, an online vehicle marketplace platform. 
+
+KEY INFORMATION ABOUT CAR YARD:
+- Users can browse and search for vehicles
+- Users can book vehicles and make payments via Stripe
+- Sellers can add vehicles for sale
+- Buyers can comment on vehicles and rate them
+- There are currently {vehicle_count} vehicles available
+- Payment methods include: Stripe (Credit/Debit Cards), M-Pesa, PayPal
+- Users can send messages to each other
+- Staff members can manage bookings and update booking statuses
+- Booking statuses: PENDING, CONFIRMED, CANCELLED
+
+USER CONTEXT:
+- Current user: {username}
+- User is {'authenticated' if user else 'not authenticated'}
+
+YOUR ROLE:
+- Be helpful, friendly, and concise
+- Guide users on how to use the platform
+- Explain features like booking, searching, adding vehicles, payments
+- If asked about specific vehicles, suggest using the search feature
+- If asked about booking, explain the booking process
+- If asked about payments, mention the available payment methods
+- Keep responses conversational and under 150 words
+- Use emojis sparingly (1-2 per response max)
+- If you don't know something specific, suggest contacting support or checking the website
+
+IMPORTANT:
+- Always be helpful and encouraging
+- Never make up specific vehicle details or prices
+- Direct users to use the search feature for finding specific vehicles
+- For booking, explain they need to click "Book Now" on a vehicle detail page"""
 
         try:
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": "You are a helpful virtual assistant for Car Yard. Help users find cars, understand booking, prices, and dealership info."},
-                    {"role": "user", "content": user_message},
-                ],
-                temperature=0.6,
-                max_tokens=250
-            )
+            # Check for common queries first (fallback if API fails)
+            if any(word in user_message for word in ['hello', 'hi', 'hey', 'greetings']):
+                reply = f"Hello {username}! 👋 I'm here to help you navigate Car Yard. You can ask me about booking vehicles, searching for cars, making payments, or adding your own vehicle for sale. What would you like to know?"
+            elif any(word in user_message for word in ['book', 'booking', 'how to book', 'reserve']):
+                reply = """To book a vehicle:
+1. Browse available vehicles on the home page
+2. Click "View Details" on a vehicle you like
+3. Click "Book Now" button
+4. Complete the booking form
+5. You'll be redirected to Stripe for secure payment
+6. After payment, you'll receive a confirmation email
 
-            reply = response.choices[0].message.content.strip()
+Need help finding a specific vehicle? Use the search feature in the navigation bar! """
+            elif any(word in user_message for word in ['search', 'find', 'looking for', 'vehicle']):
+                reply = f"""To search for vehicles:
+1. Click "Search" in the navigation bar
+2. Enter keywords like make, model, or description
+3. Filter by price range if needed
+4. Browse the results and click "View Details" for more info
+
+Currently, we have {vehicle_count} vehicles available. Start your search now! """
+            elif any(word in user_message for word in ['payment', 'pay', 'stripe', 'card', 'money']):
+                reply = """Payment options at Car Yard:
+- Stripe (Credit/Debit Cards) - Secure online payment
+- M-Pesa - Mobile money payment
+- PayPal - Digital wallet payment
+
+All payments are processed securely. After booking, you'll receive an invoice via email. """
+            elif any(word in user_message for word in ['sell', 'add vehicle', 'list', 'post']):
+                reply = """To add a vehicle for sale:
+1. Click "Add Vehicle" in the navigation bar
+2. Fill in the vehicle details (title, description, price)
+3. Upload a clear photo of your vehicle
+4. Submit the form
+5. Your vehicle will appear on the home page
+
+Make sure to include accurate information and a good photo! """
+            elif any(word in user_message for word in ['help', 'support', 'assistance']):
+                reply = """I'm here to help! I can assist you with:
+- Booking vehicles
+- Searching for cars
+- Payment information
+- Adding vehicles for sale
+- Understanding the platform features
+
+What specific help do you need? Just ask! """
+            else:
+                # Use OpenAI for other queries
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_message},
+                    ],
+                    temperature=0.7,
+                    max_tokens=200
+                )
+                reply = response.choices[0].message.content.strip()
+            
+            # Log the conversation if user is authenticated
+            if user:
+                try:
+                    ChatbotLog.objects.create(
+                        user=user,
+                        user_message=user_message,
+                        bot_reply=reply
+                    )
+                except:
+                    pass  # Don't fail if logging fails
+            
             return JsonResponse({"reply": reply})
 
         except Exception as e:
             print("Chatbot error:", e)
-            return JsonResponse({"reply": "Sorry, I’m having trouble responding right now. Please try again later."})
+            # Fallback response
+            fallback_replies = [
+                "I'm having a bit of trouble right now. Please try asking again in a moment!",
+                "Sorry, I'm experiencing some technical difficulties. Could you rephrase your question?",
+                "I'm not able to process that right now. Try asking about booking, searching, or payments!"
+            ]
+            import random
+            return JsonResponse({"reply": random.choice(fallback_replies)})
 
 
 
@@ -563,17 +794,34 @@ def staff_dashboard(request):
     try:
         staff = Staff.objects.get(user=request.user)
     except Staff.DoesNotExist:
+        # If user is not a staff member, redirect them
+        if not request.user.is_superuser:
+            messages.error(request, "You must be a staff member to access this page.")
+            return redirect("home")
         staff = None
 
     # Superusers see all bookings; staff see only their assigned ones
     if request.user.is_superuser:
-        bookings = Booking.objects.all()
+        bookings = Booking.objects.select_related('vehicle', 'buyer', 'staff').all().order_by('-date')
     elif staff:
-        bookings = Booking.objects.filter(staff=staff)
+        bookings = Booking.objects.filter(staff=staff).select_related('vehicle', 'buyer').order_by('-date')
     else:
         bookings = []
 
-    return render(request, "staff_dashboard.html", {"staff": staff, "bookings": bookings})
+    # Calculate statistics
+    total_bookings = bookings.count()
+    pending_count = bookings.filter(status='PENDING').count()
+    confirmed_count = bookings.filter(status='CONFIRMED').count()
+    tour_count = bookings.filter(booking_type='TOUR').count()
+
+    return render(request, "staff_dashboard.html", {
+        "staff": staff, 
+        "bookings": bookings,
+        "total_bookings": total_bookings,
+        "pending_count": pending_count,
+        "confirmed_count": confirmed_count,
+        "tour_count": tour_count,
+    })
 
 
 
@@ -582,27 +830,40 @@ def update_booking_status(request, booking_id):
     try:
         staff = Staff.objects.get(user=request.user)
     except Staff.DoesNotExist:
-        messages.error(request, "You are not authorized to perform this action.")
-        return redirect("home")
+        # Allow superusers to update any booking
+        if not request.user.is_superuser:
+            messages.error(request, "You are not authorized to perform this action.")
+            return redirect("home")
+        staff = None
 
-    booking = get_object_or_404(Booking, id=booking_id, staff=staff)
+    # Staff can only update their assigned bookings, superusers can update any
+    if request.user.is_superuser:
+        booking = get_object_or_404(Booking, id=booking_id)
+    else:
+        booking = get_object_or_404(Booking, id=booking_id, staff=staff)
 
     if request.method == "POST":
         new_status = request.POST.get("status")
+        notes = request.POST.get("notes", "")
+        
         if new_status in ["PENDING", "CONFIRMED", "CANCELLED"]:
+            old_status = booking.status
             booking.status = new_status
+            if notes:
+                booking.notes = notes
             booking.save()
 
-            # ✅ Create in-app notification
+            # Create in-app notification
+            booking_title = booking.vehicle.title if booking.vehicle else "Car Yard Tour"
             Notification.objects.create(
                 user=booking.buyer.user,
-                message=f"Your booking for {booking.vehicle.title} is now {booking.status}.",
+                message=f"Your booking for {booking_title} is now {booking.status}.",
             )
 
-            # ✅ Send email to buyer
+            # Send email to buyer
             send_booking_status_email(booking)
 
-            messages.success(request, f"Booking status updated to {new_status}. Buyer notified.")
+            messages.success(request, f"Booking status updated from {old_status} to {new_status}. Buyer has been notified.")
             return redirect("staff_dashboard")
         else:
             messages.error(request, "Invalid status selected.")
@@ -699,4 +960,18 @@ def chat_with_user(request, user_id):
     return render(request, 'chat_with_user.html', {
         'other_user': other_user,
         'messages': messages_qs
+    })
+
+
+@login_required
+def my_bookings(request):
+    """View for buyers to see their bookings."""
+    try:
+        buyer = Buyer.objects.get(user=request.user)
+        bookings = Booking.objects.filter(buyer=buyer).select_related('vehicle', 'staff').order_by('-date')
+    except Buyer.DoesNotExist:
+        bookings = []
+    
+    return render(request, 'my_bookings.html', {
+        'bookings': bookings
     })

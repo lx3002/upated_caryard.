@@ -1,73 +1,224 @@
-{% extends "base.html" %} {% block content %}
-<div class="container mt-4">
-    <h2 class="fw-bold">🚘 Welcome, {{ staff.user.username }}</h2>
-    <p class="text-muted">Position: {{ staff.position }}</p>
+{% extends "base.html" %} {% load static %} {% block content %}
+<style>
+    .dashboard-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px;
+        border-radius: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .stats-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .stats-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #667eea;
+        margin-bottom: 10px;
+    }
+    
+    .stats-label {
+        color: #6c757d;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+    }
+    
+    .booking-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        border-left: 4px solid #667eea;
+        transition: all 0.3s;
+    }
+    
+    .booking-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .status-badge {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+</style>
 
-    <hr> {% if user.is_superuser %}
-    <h4 class="mt-4 text-primary"><i class="fa fa-tasks"></i> Manage All Bookings</h4>
-    {% else %}
-    <h4 class="mt-4 text-primary"><i class="fa fa-clipboard-list"></i> My Assigned Bookings</h4>
-    {% endif %} {% if bookings %}
-    <div class="table-responsive mt-3">
-        <table class="table table-striped align-middle shadow-sm">
-            <thead class="table-dark">
-                <tr>
-                    <th>Vehicle</th>
-                    <th>Buyer</th>
-                    <th>Status</th>
-                    <th>Booking Date</th>
-                    {% if user.is_superuser %}
-                    <th>Assigned Staff</th>
+<div class="container-fluid">
+    <!-- Dashboard Header -->
+    <div class="dashboard-hero">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <h2 class="fw-bold mb-2">
+                    <i class="fa fa-briefcase"></i> Staff Dashboard
+                </h2>
+                <p class="mb-0">
+                    Welcome, <strong>{{ staff.user.username }}</strong>
+                    {% if staff.position %}
+                        <span class="ms-2">• {{ staff.position }}</span>
                     {% endif %}
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
+                </p>
+            </div>
+            <div>
+                {% if user.is_superuser %}
+                <span class="badge bg-warning text-dark px-3 py-2">
+                    <i class="fa fa-crown"></i> Administrator
+                </span>
+                {% else %}
+                <span class="badge bg-info text-white px-3 py-2">
+                    <i class="fa fa-user-tie"></i> Staff Member
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="stats-card">
+                <div class="stats-number">{{ total_bookings }}</div>
+                <div class="stats-label">Total Bookings</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stats-card">
+                <div class="stats-number">{{ pending_count }}</div>
+                <div class="stats-label">Pending</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stats-card">
+                <div class="stats-number">{{ confirmed_count }}</div>
+                <div class="stats-label">Confirmed</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stats-card">
+                <div class="stats-number">{{ tour_count }}</div>
+                <div class="stats-label">Tours</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bookings Section -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <h4 class="mb-0">
+                <i class="fa fa-clipboard-list"></i> 
+                {% if user.is_superuser %}
+                    All Bookings
+                {% else %}
+                    My Assigned Bookings
+                {% endif %}
+            </h4>
+        </div>
+        <div class="card-body">
+            {% if bookings %}
+            <div class="row g-3">
                 {% for booking in bookings %}
-                <tr>
-                    <td>{{ booking.vehicle.title }}</td>
-                    <td>{{ booking.buyer.user.username }}</td>
-                    <td>
-                        {% if booking.status == 'CONFIRMED' %}
-                        <span class="badge bg-success">{{ booking.status }}</span> {% elif booking.status == 'PENDING' %}
-                        <span class="badge bg-warning text-dark">{{ booking.status }}</span> {% else %}
-                        <span class="badge bg-danger">{{ booking.status }}</span> {% endif %}
-                    </td>
-                    <td>{{ booking.date|date:"Y-m-d H:i" }}</td>
-
-                    {% if user.is_superuser %}
-                    <td>
-                        {% if booking.staff %}
-                        <span class="text-success"><i class="fa fa-check-circle"></i> {{ booking.staff.user.username }}</span> {% else %}
-                        <span class="text-muted">Not Assigned</span> {% endif %}
-                    </td>
-                    {% endif %}
-
-                    <td>
-                        {% if user.is_superuser %} {% if not booking.staff %}
-                        <a href="{% url 'assign_staff' booking.id %}" class="btn btn-sm btn-warning">
-                            <i class="fa fa-user-plus"></i> Assign
-                        </a>
-                        {% else %}
-                        <a href="{% url 'update_booking_status' booking.id %}" class="btn btn-sm btn-primary">
-                            <i class="fa fa-edit"></i> Update
-                        </a>
-                        {% endif %} {% else %} {% if booking.staff == staff %}
-                        <a href="{% url 'update_booking_status' booking.id %}" class="btn btn-sm btn-primary">
-                            <i class="fa fa-edit"></i> Update
-                        </a>
-                        {% else %}
-                        <span class="text-muted">No actions</span> {% endif %} {% endif %}
-                    </td>
-                </tr>
+                <div class="col-12">
+                    <div class="booking-card">
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <h5 class="fw-bold mb-2">
+                                    {% if booking.booking_type == 'TOUR' %}
+                                        <span class="badge bg-info text-white me-2">TOUR</span>
+                                        <i class="fa fa-map-marker-alt text-info"></i> Car Yard Tour
+                                    {% else %}
+                                        <span class="badge bg-primary me-2">VEHICLE</span>
+                                        <i class="fa fa-car text-primary"></i> 
+                                        {{ booking.vehicle.title|default:"N/A" }}
+                                    {% endif %}
+                                </h5>
+                                <p class="text-muted mb-1">
+                                    <i class="fa fa-user"></i> <strong>Buyer:</strong> {{ booking.buyer.user.username }}
+                                </p>
+                                <p class="text-muted mb-1">
+                                    <i class="fa fa-calendar"></i> <strong>Booked:</strong> 
+                                    {{ booking.date|date:"M d, Y H:i" }}
+                                </p>
+                                {% if booking.booking_type == 'TOUR' and booking.tour_date %}
+                                <p class="text-muted mb-0">
+                                    <i class="fa fa-clock"></i> <strong>Tour Date:</strong> 
+                                    {{ booking.tour_date|date:"M d, Y H:i" }}
+                                </p>
+                                {% endif %}
+                                {% if booking.vehicle %}
+                                <p class="text-muted mb-0">
+                                    <i class="fa fa-dollar-sign"></i> <strong>Price:</strong> 
+                                    ${{ booking.vehicle.price|floatformat:2 }}
+                                </p>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <span class="status-badge 
+                                    {% if booking.status == 'CONFIRMED' %}bg-success text-white
+                                    {% elif booking.status == 'PENDING' %}bg-warning text-dark
+                                    {% else %}bg-danger text-white{% endif %}">
+                                    {{ booking.status }}
+                                </span>
+                            </div>
+                            <div class="col-md-3">
+                                {% if booking.notes %}
+                                <p class="text-muted small mb-0">
+                                    <i class="fa fa-sticky-note"></i> <strong>Notes:</strong><br>
+                                    {{ booking.notes|truncatewords:10 }}
+                                </p>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2">
+                                <div class="action-buttons">
+                                    {% if user.is_superuser %}
+                                        {% if not booking.staff %}
+                                        <a href="{% url 'assign_staff' booking.id %}" class="btn btn-sm btn-warning">
+                                            <i class="fa fa-user-plus"></i> Assign
+                                        </a>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if booking.staff == staff or user.is_superuser %}
+                                    <a href="{% url 'update_booking_status' booking.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fa fa-edit"></i> Update
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 {% endfor %}
-            </tbody>
-        </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fa fa-clipboard-list" style="font-size: 4rem; color: #ccc; margin-bottom: 20px;"></i>
+                <h4 class="text-muted">No bookings assigned</h4>
+                <p class="text-muted">You don't have any bookings assigned to you yet.</p>
+            </div>
+            {% endif %}
+        </div>
     </div>
-    {% else %}
-    <div class="alert alert-warning mt-4">
-        <i class="fa fa-info-circle"></i> No bookings found.
-    </div>
-    {% endif %}
 </div>
 {% endblock %}

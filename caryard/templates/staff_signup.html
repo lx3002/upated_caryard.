@@ -1,25 +1,175 @@
-{% extends 'base.html' %} {% block content %}
-<div class="container mt-4">
-    <h2 class="fw-bold">👔 Register New Staff Member</h2>
-    <form method="POST" class="card p-4 shadow mt-3">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label>Username</label>
-            <input type="text" name="username" class="form-control" required>
+{% extends "base.html" %} {% load static %} {% block content %}
+<style>
+    .signup-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 50px 20px;
+        border-radius: 20px;
+        margin-bottom: 40px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .signup-card {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+    }
+    
+    .form-control, .form-select {
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        padding: 12px 15px;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .submit-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 25px;
+        padding: 15px 40px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s;
+        width: 100%;
+    }
+    
+    .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        color: white;
+    }
+    
+    .info-box {
+        background: #e3f2fd;
+        border-left: 4px solid #2196f3;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 25px;
+    }
+</style>
+
+<div class="container">
+    <!-- Hero Section -->
+    <div class="signup-hero text-center">
+        <h1 class="display-5 fw-bold mb-3">
+            <i class="fa fa-user-tie"></i> Staff Registration
+        </h1>
+        <p class="lead mb-0">Join the Car Yard team and manage bookings</p>
+    </div>
+
+    <!-- Signup Form -->
+    <div class="signup-card">
+        <div class="info-box">
+            <i class="fa fa-info-circle text-primary"></i>
+            <strong>Staff Account Benefits:</strong>
+            <ul class="mb-0 mt-2">
+                <li>Access to staff dashboard</li>
+                <li>Manage assigned bookings</li>
+                <li>Update booking status</li>
+                <li>View customer information</li>
+            </ul>
         </div>
-        <div class="mb-3">
-            <label>Password</label>
-            <input type="password" name="password" class="form-control" required>
+
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="mb-4">
+                <label for="username" class="form-label">
+                    <i class="fa fa-user"></i> Username
+                </label>
+                <input 
+                    type="text" 
+                    name="username" 
+                    id="username"
+                    class="form-control" 
+                    placeholder="Choose a username"
+                    required
+                    autofocus
+                >
+            </div>
+
+            <div class="mb-4">
+                <label for="email" class="form-label">
+                    <i class="fa fa-envelope"></i> Email Address
+                </label>
+                <input 
+                    type="email" 
+                    name="email" 
+                    id="email"
+                    class="form-control" 
+                    placeholder="your.email@example.com"
+                >
+                <small class="text-muted">Optional - used for notifications</small>
+            </div>
+
+            <div class="mb-4">
+                <label for="password" class="form-label">
+                    <i class="fa fa-lock"></i> Password
+                </label>
+                <input 
+                    type="password" 
+                    name="password" 
+                    id="password"
+                    class="form-control" 
+                    placeholder="Create a strong password"
+                    required
+                    minlength="8"
+                >
+                <small class="text-muted">Minimum 8 characters</small>
+            </div>
+
+            <div class="mb-4">
+                <label for="position" class="form-label">
+                    <i class="fa fa-briefcase"></i> Position/Title
+                </label>
+                <input 
+                    type="text" 
+                    name="position" 
+                    id="position"
+                    class="form-control" 
+                    placeholder="e.g., Sales Assistant, Manager, Customer Service"
+                >
+            </div>
+
+            <div class="mb-4">
+                <label for="phone" class="form-label">
+                    <i class="fa fa-phone"></i> Phone Number
+                </label>
+                <input 
+                    type="text" 
+                    name="phone" 
+                    id="phone"
+                    class="form-control" 
+                    placeholder="e.g., +1234567890"
+                >
+            </div>
+
+            <button type="submit" class="submit-btn">
+                <i class="fa fa-user-plus"></i> Create Staff Account
+            </button>
+        </form>
+
+        <div class="text-center mt-4">
+            <p class="text-muted">
+                Already have an account? 
+                <a href="{% url 'login' %}" class="text-primary fw-bold">Login here</a>
+            </p>
         </div>
-        <div class="mb-3">
-            <label>Position</label>
-            <input type="text" name="position" class="form-control" placeholder="e.g. Sales Assistant">
-        </div>
-        <div class="mb-3">
-            <label>Phone</label>
-            <input type="text" name="phone" class="form-control">
-        </div>
-        <button type="submit" class="btn btn-success">Create Staff</button>
-    </form>
+    </div>
 </div>
 {% endblock %}

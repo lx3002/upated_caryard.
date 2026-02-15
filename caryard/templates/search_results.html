@@ -1,36 +1,211 @@
-{% extends "base.html" %}
-{% load static %}
+{% extends "base.html" %} {% load static %} {% block content %}
+<style>
+    .results-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .vehicle-card {
+        transition: all 0.3s ease;
+        border: none;
+        overflow: hidden;
+        height: 100%;
+    }
+    
+    .vehicle-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.2) !important;
+    }
+    
+    .vehicle-card .card-img-top {
+        transition: transform 0.5s ease;
+        height: 250px;
+        object-fit: cover;
+    }
+    
+    .vehicle-card:hover .card-img-top {
+        transform: scale(1.1);
+    }
+    
+    .price-badge {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+        font-size: 1.2rem;
+        font-weight: bold;
+        padding: 8px 16px;
+        border-radius: 25px;
+        box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);
+    }
+    
+    .seller-badge {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+    }
+    
+    .action-btn {
+        transition: all 0.3s ease;
+        border-radius: 25px;
+        font-weight: 500;
+        padding: 8px 20px;
+    }
+    
+    .action-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .filter-badge {
+        display: inline-block;
+        background: rgba(102, 126, 234, 0.1);
+        color: #667eea;
+        padding: 5px 12px;
+        border-radius: 15px;
+        margin: 5px;
+        font-size: 0.9rem;
+    }
+    
+    .no-results {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    
+    .no-results-icon {
+        font-size: 5rem;
+        color: #ccc;
+        margin-bottom: 20px;
+    }
+</style>
 
-{% block content %}
-<h2 class="mb-4"><i class="fa fa-search"></i> Search Results</h2>
-
-{% if vehicles %}
-<div class="row">
-    {% for vehicle in vehicles %}
-    <div class="col-md-4 mb-4">
-        <div class="card shadow-sm h-100">
-            {% if vehicle.image %}
-                <img src="{{ vehicle.image.url }}" class="card-img-top" alt="{{ vehicle.title }}">
-            {% else %}
-                <img src="{% static 'images/no-image.png' %}" class="card-img-top" alt="No image available">
-            {% endif %}
-
-            <div class="card-body">
-                <h5 class="card-title">{{ vehicle.title }}</h5>
-                <p class="card-text text-muted">{{ vehicle.description|truncatewords:15 }}</p>
-                <span class="badge bg-success">${{ vehicle.price }}</span>
-                <span class="badge bg-info"><i class="fa fa-user"></i> {{ vehicle.seller.user.username }}</span>
+<div class="container-fluid">
+    <!-- Results Header -->
+    <div class="results-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <h2 class="mb-2">
+                    <i class="fa fa-search"></i> Search Results
+                </h2>
+                <p class="mb-0">
+                    {% if vehicles %}
+                        Found <strong>{{ vehicles.count }}</strong> vehicle{{ vehicles.count|pluralize }}
+                    {% else %}
+                        No vehicles found
+                    {% endif %}
+                </p>
             </div>
-            <div class="card-footer text-center">
-                <a href="{% url 'vehicle_detail' vehicle.pk %}" class="btn btn-outline-primary btn-sm">
-                    <i class="fa fa-eye"></i> View Details
-                </a>
+            <a href="{% url 'search' %}" class="btn btn-light">
+                <i class="fa fa-arrow-left"></i> New Search
+            </a>
+        </div>
+        
+        <!-- Active Filters -->
+        {% if query or make or min_price or max_price %}
+        <div class="mt-3">
+            <small class="text-white-50">Active filters:</small>
+            {% if query %}
+            <span class="filter-badge bg-white text-primary">
+                <i class="fa fa-tag"></i> "{{ query }}"
+            </span>
+            {% endif %}
+            {% if make %}
+            <span class="filter-badge bg-white text-primary">
+                <i class="fa fa-car"></i> {{ make }}
+            </span>
+            {% endif %}
+            {% if min_price %}
+            <span class="filter-badge bg-white text-primary">
+                <i class="fa fa-dollar-sign"></i> Min: ${{ min_price }}
+            </span>
+            {% endif %}
+            {% if max_price %}
+            <span class="filter-badge bg-white text-primary">
+                <i class="fa fa-dollar-sign"></i> Max: ${{ max_price }}
+            </span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Search Results -->
+    {% if vehicles %}
+    <div class="row g-4">
+        {% for vehicle in vehicles %}
+        <div class="col-md-4 col-sm-6">
+            <div class="card vehicle-card shadow-lg border-0 h-100 rounded-3">
+                <!-- Vehicle Image -->
+                <div style="position: relative; overflow: hidden;">
+                    {% if vehicle.image %}
+                    <img src="{{ vehicle.image.url }}" class="card-img-top img-fluid" alt="{{ vehicle.title }}">
+                    {% else %}
+                    <img src="{% static 'images/no-image.png' %}" class="card-img-top img-fluid" alt="No image available">
+                    {% endif %}
+                    <div style="position: absolute; top: 10px; right: 10px;">
+                        {% if vehicle.average_rating %}
+                        <span class="badge bg-warning text-dark">
+                            <i class="fa fa-star"></i> {{ vehicle.average_rating|floatformat:1 }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Card Body -->
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title fw-bold text-dark mb-3" style="font-size: 1.3rem;">{{ vehicle.title }}</h5>
+                    <p class="card-text text-muted" style="line-height: 1.6;">{{ vehicle.description|truncatewords:20 }}</p>
+
+                    <div class="mt-auto d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <span class="price-badge">
+                            <i class="fa fa-dollar-sign"></i> {{ vehicle.price|floatformat:2 }}
+                        </span>
+                        <span class="seller-badge">
+                            <i class="fa fa-user"></i> {{ vehicle.seller.user.username }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Card Footer -->
+                <div class="card-footer bg-white border-top">
+                    <div class="d-flex justify-content-between gap-2">
+                        <a href="{% url 'vehicle_detail' vehicle.pk %}" class="btn btn-primary action-btn flex-fill">
+                            <i class="fa fa-eye"></i> View Details
+                        </a>
+                        <a href="{% url 'book_vehicle' vehicle.pk %}" class="btn btn-success action-btn flex-fill">
+                            <i class="fa fa-book"></i> Book Now
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
+    {% else %}
+    <!-- No Results -->
+    <div class="no-results">
+        <div class="no-results-icon">
+            <i class="fa fa-search"></i>
+        </div>
+        <h3 class="text-muted mb-3">No vehicles found</h3>
+        <p class="text-muted mb-4">
+            {% if query or make or min_price or max_price %}
+                Try adjusting your search criteria or filters.
+            {% else %}
+                Start by entering a search term above.
+            {% endif %}
+        </p>
+        <div class="d-flex gap-2 justify-content-center flex-wrap">
+            <a href="{% url 'search' %}" class="btn btn-primary">
+                <i class="fa fa-search"></i> New Search
+            </a>
+            <a href="{% url 'home' %}" class="btn btn-outline-primary">
+                <i class="fa fa-home"></i> Browse All Vehicles
+            </a>
+        </div>
+    </div>
+    {% endif %}
 </div>
-{% else %}
-    <p class="text-muted">No results found for your search.</p>
-{% endif %}
 {% endblock %}

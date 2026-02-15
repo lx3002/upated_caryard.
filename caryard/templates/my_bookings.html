@@ -1,0 +1,107 @@
+{% extends "base.html" %} {% load static %} {% block content %}
+<style>
+    .booking-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #667eea;
+    }
+    
+    .booking-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .status-badge {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold">
+                <i class="fa fa-list"></i> My Bookings
+            </h2>
+            <p class="text-muted">View and manage your vehicle bookings</p>
+        </div>
+    </div>
+
+    {% if bookings %}
+    <div class="row g-4">
+        {% for booking in bookings %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card booking-card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="card-title fw-bold mb-1">
+                                {% if booking.booking_type == 'TOUR' %}
+                                    <span class="badge bg-info text-white me-2">TOUR</span>Car Yard Tour
+                                {% else %}
+                                    <span class="badge bg-primary me-2">VEHICLE</span>{{ booking.vehicle.title|default:"N/A" }}
+                                {% endif %}
+                            </h5>
+                        </div>
+                        <span class="status-badge 
+                            {% if booking.status == 'CONFIRMED' %}bg-success text-white
+                            {% elif booking.status == 'PENDING' %}bg-warning text-dark
+                            {% else %}bg-danger text-white{% endif %}">
+                            {{ booking.status }}
+                        </span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {% if booking.booking_type == 'VEHICLE' and booking.vehicle %}
+                        <p class="text-muted mb-1">
+                            <i class="fa fa-dollar-sign"></i> <strong>Price:</strong> ${{ booking.vehicle.price|floatformat:2 }}
+                        </p>
+                        {% endif %}
+                        <p class="text-muted mb-1">
+                            <i class="fa fa-calendar"></i> <strong>Booked:</strong> {{ booking.date|date:"M d, Y H:i" }}
+                        </p>
+                        {% if booking.booking_type == 'TOUR' and booking.tour_date %}
+                        <p class="text-muted mb-1">
+                            <i class="fa fa-clock"></i> <strong>Tour Date:</strong> {{ booking.tour_date|date:"M d, Y H:i" }}
+                        </p>
+                        {% endif %}
+                        {% if booking.staff %}
+                        <p class="text-muted mb-0">
+                            <i class="fa fa-user-tie"></i> <strong>Staff:</strong> {{ booking.staff.user.username }}
+                        </p>
+                        {% endif %}
+                        {% if booking.notes %}
+                        <p class="text-muted mb-0 small">
+                            <i class="fa fa-sticky-note"></i> <strong>Notes:</strong> {{ booking.notes|truncatewords:10 }}
+                        </p>
+                        {% endif %}
+                    </div>
+                    
+                    {% if booking.vehicle %}
+                    <a href="{% url 'vehicle_detail' booking.vehicle.pk %}" class="btn btn-primary btn-sm">
+                        <i class="fa fa-eye"></i> View Vehicle
+                    </a>
+                    {% else %}
+                    <span class="btn btn-info btn-sm disabled">
+                        <i class="fa fa-map-marker-alt"></i> Tour Booking
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fa fa-calendar-times" style="font-size: 4rem; color: #ccc; margin-bottom: 20px;"></i>
+        <h3 class="text-muted">No bookings yet</h3>
+        <p class="text-muted">Start browsing vehicles and make your first booking!</p>
+        <a href="{% url 'home' %}" class="btn btn-primary mt-3">
+            <i class="fa fa-car"></i> Browse Vehicles
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+

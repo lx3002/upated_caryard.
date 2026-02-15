@@ -59,15 +59,25 @@ class Booking(models.Model):
         ('CONFIRMED', 'Confirmed'),
         ('CANCELLED', 'Cancelled'),
     )
+    
+    BOOKING_TYPE_CHOICES = (
+        ('VEHICLE', 'Vehicle Purchase'),
+        ('TOUR', 'Car Yard Tour'),
+    )
 
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
+    booking_type = models.CharField(max_length=10, choices=BOOKING_TYPE_CHOICES, default='VEHICLE')
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, null=True, blank=True)
     buyer = models.ForeignKey(Buyer, on_delete=models.CASCADE)
     date = models.DateTimeField(default=timezone.now)
     staff = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, blank=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
+    tour_date = models.DateTimeField(null=True, blank=True, help_text="Preferred date for car yard tour")
+    notes = models.TextField(blank=True, help_text="Additional notes for the booking")
 
     def __str__(self):
-        return f"{self.vehicle.title} booked by {self.buyer.user.username}"
+        if self.booking_type == 'TOUR':
+            return f"Car Yard Tour booked by {self.buyer.user.username}"
+        return f"{self.vehicle.title if self.vehicle else 'Vehicle'} booked by {self.buyer.user.username}"
 
 
 

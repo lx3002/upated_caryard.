@@ -1,23 +1,170 @@
-{% extends "base.html" %} {% block content %}
-<div class="container mt-4">
-    <div class="card shadow p-4">
-        <h3>Update Booking Status</h3>
-        <p><strong>Vehicle:</strong> {{ booking.vehicle.title }}</p>
-        <p><strong>Buyer:</strong> {{ booking.buyer.user.username }}</p>
-        <p><strong>Current Status:</strong> <span class="badge bg-info text-dark">{{ booking.status }}</span></p>
+{% extends "base.html" %} {% load static %} {% block content %}
+<style>
+    .update-card {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    
+    .booking-info {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 30px;
+        border-left: 4px solid #667eea;
+    }
+    
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    .status-select {
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        padding: 12px 15px;
+        font-size: 1.1rem;
+        transition: all 0.3s;
+    }
+    
+    .status-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .submit-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 25px;
+        padding: 15px 40px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        color: white;
+    }
+</style>
 
+<div class="container">
+    <div class="update-card">
+        <h2 class="fw-bold mb-4">
+            <i class="fa fa-edit"></i> Update Booking Status
+        </h2>
+
+        <!-- Booking Information -->
+        <div class="booking-info">
+            <h5 class="fw-bold mb-3">
+                <i class="fa fa-info-circle"></i> Booking Details
+            </h5>
+            <div class="info-item">
+                <span class="text-muted"><strong>Booking Type:</strong></span>
+                <span>
+                    {% if booking.booking_type == 'TOUR' %}
+                        <span class="badge bg-info text-white">Car Yard Tour</span>
+                    {% else %}
+                        <span class="badge bg-primary">Vehicle Purchase</span>
+                    {% endif %}
+                </span>
+            </div>
+            {% if booking.vehicle %}
+            <div class="info-item">
+                <span class="text-muted"><strong>Vehicle:</strong></span>
+                <span class="fw-bold">{{ booking.vehicle.title }}</span>
+            </div>
+            {% endif %}
+            <div class="info-item">
+                <span class="text-muted"><strong>Buyer:</strong></span>
+                <span class="fw-bold">{{ booking.buyer.user.username }}</span>
+            </div>
+            <div class="info-item">
+                <span class="text-muted"><strong>Email:</strong></span>
+                <span>{{ booking.buyer.user.email }}</span>
+            </div>
+            {% if booking.booking_type == 'TOUR' and booking.tour_date %}
+            <div class="info-item">
+                <span class="text-muted"><strong>Tour Date:</strong></span>
+                <span>{{ booking.tour_date|date:"M d, Y H:i" }}</span>
+            </div>
+            {% endif %}
+            {% if booking.vehicle %}
+            <div class="info-item">
+                <span class="text-muted"><strong>Price:</strong></span>
+                <span class="fw-bold text-success">${{ booking.vehicle.price|floatformat:2 }}</span>
+            </div>
+            {% endif %}
+            <div class="info-item">
+                <span class="text-muted"><strong>Current Status:</strong></span>
+                <span class="status-badge 
+                    {% if booking.status == 'CONFIRMED' %}bg-success text-white
+                    {% elif booking.status == 'PENDING' %}bg-warning text-dark
+                    {% else %}bg-danger text-white{% endif %}">
+                    {{ booking.status }}
+                </span>
+            </div>
+            {% if booking.notes %}
+            <div class="info-item">
+                <span class="text-muted"><strong>Notes:</strong></span>
+                <span>{{ booking.notes }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Update Form -->
         <form method="post">
             {% csrf_token %}
-            <div class="mb-3">
-                <label for="status" class="form-label">Change Status:</label>
-                <select name="status" id="status" class="form-select">
-                    <option value="PENDING" {% if booking.status == "PENDING" %}selected{% endif %}>Pending</option>
-                    <option value="CONFIRMED" {% if booking.status == "CONFIRMED" %}selected{% endif %}>Confirmed</option>
-                    <option value="CANCELLED" {% if booking.status == "CANCELLED" %}selected{% endif %}>Cancelled</option>
+            
+            <div class="mb-4">
+                <label for="status" class="form-label fw-bold mb-3">
+                    <i class="fa fa-tasks"></i> Change Status:
+                </label>
+                <select name="status" id="status" class="form-select status-select">
+                    <option value="PENDING" {% if booking.status == "PENDING" %}selected{% endif %}>
+                        ⏳ Pending
+                    </option>
+                    <option value="CONFIRMED" {% if booking.status == "CONFIRMED" %}selected{% endif %}>
+                        ✅ Confirmed
+                    </option>
+                    <option value="CANCELLED" {% if booking.status == "CANCELLED" %}selected{% endif %}>
+                        ❌ Cancelled
+                    </option>
                 </select>
             </div>
-            <button type="submit" class="btn btn-success">Update</button>
-            <a href="{% url 'staff_dashboard' %}" class="btn btn-secondary ms-2">Back</a>
+
+            <div class="mb-4">
+                <label for="notes" class="form-label fw-bold mb-3">
+                    <i class="fa fa-sticky-note"></i> Additional Notes (Optional):
+                </label>
+                <textarea 
+                    name="notes" 
+                    id="notes" 
+                    class="form-control" 
+                    rows="4"
+                    placeholder="Add any notes about this booking update..."
+                >{{ booking.notes }}</textarea>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="submit-btn flex-fill">
+                    <i class="fa fa-save"></i> Update Status
+                </button>
+                <a href="{% url 'staff_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fa fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
         </form>
     </div>
 </div>

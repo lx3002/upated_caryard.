@@ -70,9 +70,25 @@ class SignupForm(StyledFormMixin, forms.ModelForm):
 
 
 class BookingForm(StyledFormMixin, forms.ModelForm):
+    booking_type = forms.ChoiceField(
+        choices=Booking.BOOKING_TYPE_CHOICES,
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
+        initial='VEHICLE'
+    )
+    tour_date = forms.DateTimeField(
+        required=False,
+        widget=forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+        help_text="Select preferred date and time for the tour"
+    )
+    notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Any additional notes or requirements...'}),
+        help_text="Optional: Add any special requirements or notes"
+    )
+    
     class Meta:
         model = Booking
-        fields = []  # booking just links vehicle + buyer
+        fields = ['booking_type', 'tour_date', 'notes']
 
 
 class CommentForm(StyledFormMixin, forms.ModelForm):
