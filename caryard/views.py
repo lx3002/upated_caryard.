@@ -400,7 +400,7 @@ def ajax_comment(request):
     return JsonResponse({'ok': False}, status=400)
 
 
-# ---------------- RATING ----------------
+
 @login_required
 def ajax_rate(request):
     if request.method == 'POST':
@@ -416,7 +416,6 @@ def ajax_rate(request):
     return JsonResponse({'ok': False}, status=400)
 
 
-# ---------------- STRIPE WEBHOOK ----------------
 @csrf_exempt
 def stripe_webhook(request):
     payload = request.body
