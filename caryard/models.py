@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 
-# ---------------- SELLER MODEL ----------------
+
 class Seller(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     phone = models.CharField(max_length=20, blank=True, null=True)
@@ -13,7 +13,7 @@ class Seller(models.Model):
         return self.user.username
 
 
-# ---------------- BUYER MODEL ----------------
+
 class Buyer(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     phone = models.CharField(max_length=20, blank=True, null=True)
@@ -23,14 +23,16 @@ class Buyer(models.Model):
         return self.user.username
 
 
-# ---------------- VEHICLE MODEL ----------------
+
 class Vehicle(models.Model):
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name="vehicles")
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=200, null =False)
     description = models.TextField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null = False)
     image = models.ImageField(upload_to="vehicles/")
     created = models.DateTimeField(default=timezone.now)
+    buyer = models.ForeignKey(Buyer, on_delete=models.CASCADE, null=False, blank=False, related_name="purchased_vehicle")
+    uploaded_date = models.DateField(default=timezone.now)
 
     def average_rating(self):
         ratings = self.rating_set.all()
@@ -42,13 +44,14 @@ class Vehicle(models.Model):
         return self.title
 
 
-# ---------------- BOOKING MODEL ----------------
+
 class Staff(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    position = models.CharField(max_length=100, blank=True, null=True)
-    phone = models.CharField(max_length=20, blank=True, null=True)
+    position = models.CharField(max_length=100, blank=False, null=False)
+    phone = models.CharField(max_length=20, blank=False, null=False)
     assigned_since = models.DateTimeField(default=timezone.now)
-
+    email= models.EmailField(blank=False, null=False)
+    employee_date = models.DateField(blank=False, null=False)
     def __str__(self):
         return f"{self.user.username} ({self.position or 'Staff'})"
 
@@ -81,7 +84,6 @@ class Booking(models.Model):
 
 
 
-# ---------------- COMMENT MODEL ----------------
 class Comment(models.Model):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -92,7 +94,6 @@ class Comment(models.Model):
         return f"Comment by {self.user.username} on {self.vehicle.title}"
 
 
-# ---------------- RATING MODEL ----------------
 class Rating(models.Model):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -102,7 +103,7 @@ class Rating(models.Model):
         return f"{self.score} by {self.user.username} on {self.vehicle.title}"
 
 
-# ---------------- PAYMENT MODEL ----------------
+
 class Payment(models.Model):
     METHOD_CHOICES = (
         ('MPESA', 'M-Pesa'),
@@ -120,7 +121,7 @@ class Payment(models.Model):
         return f"Payment {self.amount} by {self.buyer.user.username}"
 
 
-# ---------------- CHATBOT LOG MODEL ----------------
+
 class ChatbotLog(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     user_message = models.TextField()
@@ -131,7 +132,7 @@ class ChatbotLog(models.Model):
         return f"Chat by {self.user.username if self.user else 'guest'} at {self.created}"
 
 
-# ---------------- MESSAGES MODEL ----------------
+
 class Messages(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_messages")
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_messages")

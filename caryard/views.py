@@ -44,7 +44,7 @@ from .models import Staff, Booking
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
-# ✅ Validate email format
+#  Validate email format
 def validate_email_address(email: str) -> bool:
     if not email:
         return False
@@ -84,12 +84,12 @@ def send_invoice_email(booking, payment):
         buffer.close()
 
         # ---- Stylish HTML Email ----
-        subject = "✅ Your Car Yard Payment Receipt"
+        subject = "Your Car Yard Payment Receipt"
         html_content = f"""
         <html>
         <body style="font-family: Arial, sans-serif; background-color:#f9f9f9; padding:20px;">
             <div style="max-width:600px; margin:auto; background:white; border-radius:10px; padding:20px; box-shadow:0 0 10px rgba(0,0,0,0.1);">
-                <h2 style="text-align:center; color:#2c3e50;">🚗 Car Yard Receipt</h2>
+                <h2 style="text-align:center; color:#2c3e50;"> Car Yard Receipt</h2>
                 <p style="text-align:center; color:#7f8c8d;">Thank you for your purchase! Below are your payment details.</p>
 
                 <hr style="border:none; border-top:2px solid #3498db; width:80%; margin:20px auto;">
@@ -127,7 +127,7 @@ def send_invoice_email(booking, payment):
                 </p>
 
                 <p style="text-align:center; color:#555;">
-                    Thank you for choosing <b>Car Yard</b>! 🚙
+                    Thank you for choosing <b>Car Yard</b>! 
                 </p>
             </div>
         </body>
@@ -136,23 +136,23 @@ def send_invoice_email(booking, payment):
 
         # ---- Send Email ----
         email = EmailMessage(subject, html_content, to=[recipient])
-        email.content_subtype = "html"  # ✅ Make it render as HTML
+        email.content_subtype = "html"  #  Make it render as HTML
         email.attach("CarYard_Invoice.pdf", pdf, "application/pdf")
         email.send(fail_silently=False)
 
-        print(f"✅ Email sent to {recipient}")
+        print(f"Email sent to {recipient}")
         return True, "Invoice sent successfully!"
 
     except BadHeaderError:
-        print("❌ Bad email header detected.")
+        print(" Bad email header detected.")
         return False, "Invalid email headers."
     except Exception as e:
-        print(f"❌ Email failed: {str(e)}")
+        print(f" Email failed: {str(e)}")
         return False, f"Email sending failed: {str(e)}"
 
 
 def send_tour_booking_email(booking):
-    """Send confirmation email for car yard tour booking."""
+    
     try:
         recipient = booking.buyer.user.email
 
@@ -161,7 +161,7 @@ def send_tour_booking_email(booking):
 
         tour_date_str = booking.tour_date.strftime('%Y-%m-%d %H:%M') if booking.tour_date else "To be confirmed"
         
-        subject = "✅ Car Yard Tour Booking Confirmed"
+        subject = "Car Yard Tour Booking Confirmed"
         html_content = f"""
         <html>
         <body style="font-family: Arial, sans-serif; background-color:#f9f9f9; padding:20px;">
@@ -211,14 +211,14 @@ def send_tour_booking_email(booking):
         email.content_subtype = "html"
         email.send(fail_silently=False)
 
-        print(f"✅ Tour booking email sent to {recipient}")
+        print(f" Tour booking email sent to {recipient}")
         return True, "Tour confirmation email sent successfully!"
 
     except BadHeaderError:
-        print("❌ Bad email header detected.")
+        print("Bad email header detected.")
         return False, "Invalid email headers."
     except Exception as e:
-        print(f"❌ Email failed: {str(e)}")
+        print(f"Email failed: {str(e)}")
         return False, f"Email sending failed: {str(e)}"
 
 
@@ -255,7 +255,7 @@ def add_vehicle(request):
     return render(request, 'add_vehicle.html', {'form': form})
 
 
-# ---------------- BOOKING ----------------
+# BOOKING 
 @login_required
 def book_vehicle(request, pk):
     vehicle = get_object_or_404(Vehicle, pk=pk)
@@ -301,7 +301,7 @@ def book_vehicle(request, pk):
     return redirect("vehicle_detail", pk=pk)
 
 
-# ✅ Helper: Stripe Checkout
+#  Helper: Stripe Checkout
 def create_stripe_checkout_session(request, booking):
     if not booking.vehicle:
         raise ValueError("Cannot create checkout session for tour bookings")
@@ -633,7 +633,7 @@ IMPORTANT:
         try:
             # Check for common queries first (fallback if API fails)
             if any(word in user_message for word in ['hello', 'hi', 'hey', 'greetings']):
-                reply = f"Hello {username}! 👋 I'm here to help you navigate Car Yard. You can ask me about booking vehicles, searching for cars, making payments, or adding your own vehicle for sale. What would you like to know?"
+                reply = f"Hello {username}!  I'm here to help you navigate Car Yard. You can ask me about booking vehicles, searching for cars, making payments, or adding your own vehicle for sale. What would you like to know?"
             elif any(word in user_message for word in ['book', 'booking', 'how to book', 'reserve']):
                 reply = """To book a vehicle:
 1. Browse available vehicles on the home page

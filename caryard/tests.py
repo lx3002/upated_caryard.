@@ -15,12 +15,9 @@ from .models import (
 from .forms import SignupForm, BookingForm, VehicleForm, PaymentForm
 
 
-# =============================================================================
-# MODEL TESTS
-# =============================================================================
 
 class SellerModelTest(TestCase):
-    """Unit tests for the Seller model."""
+    
 
     def setUp(self):
         self.user = User.objects.create_user(
@@ -30,7 +27,7 @@ class SellerModelTest(TestCase):
         )
 
     def test_seller_creation(self):
-        """Test that Seller is created via signal when User is created."""
+        
         self.assertTrue(Seller.objects.filter(user=self.user).exists())
 
     def test_seller_str_representation(self):
@@ -57,7 +54,6 @@ class BuyerModelTest(TestCase):
         )
 
     def test_buyer_creation(self):
-        """Test that Buyer is created via signal when User is created."""
         self.assertTrue(Buyer.objects.filter(user=self.user).exists())
 
     def test_buyer_str_representation(self):
@@ -129,7 +125,7 @@ class VehicleModelTest(TestCase):
 
 
 class BookingModelTest(TestCase):
-    """Unit tests for the Booking model."""
+    
 
     def setUp(self):
         self.seller_user = User.objects.create_user('seller', 's@test.com', 'pass123')
@@ -153,7 +149,7 @@ class BookingModelTest(TestCase):
         )
 
     def test_vehicle_booking_creation(self):
-        """Test creating a vehicle purchase booking."""
+        
         booking = Booking.objects.create(
             booking_type='VEHICLE',
             vehicle=self.vehicle,
@@ -163,7 +159,7 @@ class BookingModelTest(TestCase):
         self.assertEqual(booking.booking_type, 'VEHICLE')
 
     def test_tour_booking_creation(self):
-        """Test creating a tour booking."""
+        
         tour_date = timezone.now()
         booking = Booking.objects.create(
             booking_type='TOUR',
@@ -175,7 +171,7 @@ class BookingModelTest(TestCase):
         self.assertIsNone(booking.vehicle)
 
     def test_booking_str_vehicle(self):
-        """Test string representation for vehicle booking."""
+        
         booking = Booking.objects.create(
             booking_type='VEHICLE',
             vehicle=self.vehicle,
@@ -185,7 +181,7 @@ class BookingModelTest(TestCase):
         self.assertIn('buyer', str(booking))
 
     def test_booking_str_tour(self):
-        """Test string representation for tour booking."""
+        
         booking = Booking.objects.create(
             booking_type='TOUR',
             buyer=self.buyer
@@ -913,7 +909,7 @@ class BookingSignalTest(TestCase):
 
     @patch('caryard.signals.EmailMultiAlternatives')
     def test_notification_created_on_vehicle_booking(self, mock_email):
-        """Test notification is created when vehicle is booked."""
+        
         mock_email.return_value.send.return_value = None
         
         Booking.objects.create(
@@ -929,7 +925,7 @@ class BookingSignalTest(TestCase):
 
 
 class MessageSignalTest(TestCase):
-    """Unit tests for message-related signals."""
+    
 
     def setUp(self):
         self.sender = User.objects.create_user('sender', 'sender@test.com', 'pass123')
@@ -953,9 +949,7 @@ class MessageSignalTest(TestCase):
         ).exists())
 
 
-# =============================================================================
-# UTILITY FUNCTION TESTS
-# =============================================================================
+## utility function tests
 
 class EmailValidationTest(unittest.TestCase):
     """Unit tests for email validation utility."""

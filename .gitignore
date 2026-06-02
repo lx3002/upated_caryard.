@@ -14,6 +14,7 @@ myVenv/
 # IDE configs
 .vscode/
 .idea/
+.qodo
 
 # OS files
 .DS_Store

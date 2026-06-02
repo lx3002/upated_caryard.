@@ -6,7 +6,7 @@ from .models import Booking, Comment, Vehicle, Payment, Messages
 
 
 def validate_email_format(email):
-    """Custom email validation function"""
+    
     if not email:
         raise ValidationError("Email is required.")
     
