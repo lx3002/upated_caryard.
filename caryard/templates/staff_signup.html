@@ -1,175 +1,58 @@
-{% extends "base.html" %} {% load static %} {% block content %}
-<style>
-    .signup-hero {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 50px 20px;
-        border-radius: 20px;
-        margin-bottom: 40px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    }
-    
-    .signup-card {
-        background: white;
-        border-radius: 20px;
-        padding: 40px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        max-width: 600px;
-        margin: 0 auto;
-    }
-    
-    .form-label {
-        font-weight: 600;
-        color: #495057;
-        margin-bottom: 8px;
-    }
-    
-    .form-control, .form-select {
-        border-radius: 10px;
-        border: 2px solid #e9ecef;
-        padding: 12px 15px;
-        transition: all 0.3s;
-    }
-    
-    .form-control:focus, .form-select:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-    
-    .submit-btn {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 25px;
-        padding: 15px 40px;
-        font-size: 1.1rem;
-        font-weight: 600;
-        transition: all 0.3s;
-        width: 100%;
-    }
-    
-    .submit-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
-        color: white;
-    }
-    
-    .info-box {
-        background: #e3f2fd;
-        border-left: 4px solid #2196f3;
-        padding: 15px;
-        border-radius: 5px;
-        margin-bottom: 25px;
-    }
-</style>
+{% extends "base.html" %}
+{% load static %}
 
-<div class="container">
-    <!-- Hero Section -->
-    <div class="signup-hero text-center">
-        <h1 class="display-5 fw-bold mb-3">
-            <i class="fa fa-user-tie"></i> Staff Registration
-        </h1>
-        <p class="lead mb-0">Join the Car Yard team and manage bookings</p>
-    </div>
-
-    <!-- Signup Form -->
-    <div class="signup-card">
-        <div class="info-box">
-            <i class="fa fa-info-circle text-primary"></i>
-            <strong>Staff Account Benefits:</strong>
-            <ul class="mb-0 mt-2">
-                <li>Access to staff dashboard</li>
-                <li>Manage assigned bookings</li>
-                <li>Update booking status</li>
-                <li>View customer information</li>
-            </ul>
+{% block content %}
+<section class="cy-auth-shell">
+    <aside class="cy-auth-aside" style="--hero-image: url('{% static 'img/car/car-14.jpg' %}');">
+        <span class="cy-eyebrow"><i class="fa fa-user-tie"></i> Team access</span>
+        <h1>Join the operations desk.</h1>
+        <p>Staff accounts can review bookings, update customer status, and coordinate buyer follow-up from the dashboard.</p>
+        <div class="cy-feature-strip" style="grid-template-columns: 1fr; margin-bottom: 0;">
+            <div class="cy-feature-item" style="background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.22);">
+                <i class="fa fa-clipboard-check"></i>
+                <div><strong>Built for follow-through</strong><span>Every booking has ownership, status, and messaging paths.</span></div>
+            </div>
         </div>
+    </aside>
+
+    <div class="cy-auth-form">
+        <h2 class="fw-bold mb-2">Staff Registration</h2>
+        <p class="cy-muted mb-4">Create an internal account for booking and customer operations.</p>
 
         <form method="POST">
             {% csrf_token %}
-            
-            <div class="mb-4">
-                <label for="username" class="form-label">
-                    <i class="fa fa-user"></i> Username
-                </label>
-                <input 
-                    type="text" 
-                    name="username" 
-                    id="username"
-                    class="form-control" 
-                    placeholder="Choose a username"
-                    required
-                    autofocus
-                >
+            <div class="cy-form-grid">
+                <div>
+                    <label for="username" class="form-label fw-bold"><i class="fa fa-user"></i> Username</label>
+                    <input type="text" name="username" id="username" class="form-control" placeholder="Choose a username" required autofocus>
+                </div>
+                <div>
+                    <label for="email" class="form-label fw-bold"><i class="fa fa-envelope"></i> Email</label>
+                    <input type="email" name="email" id="email" class="form-control" placeholder="name@caryard.com">
+                </div>
+                <div>
+                    <label for="password" class="form-label fw-bold"><i class="fa fa-lock"></i> Password</label>
+                    <input type="password" name="password" id="password" class="form-control" placeholder="Create a strong password" required minlength="8">
+                    <span class="cy-form-help">Minimum 8 characters.</span>
+                </div>
+                <div>
+                    <label for="position" class="form-label fw-bold"><i class="fa fa-briefcase"></i> Position</label>
+                    <input type="text" name="position" id="position" class="form-control" placeholder="Sales, manager, support">
+                </div>
+                <div class="full">
+                    <label for="phone" class="form-label fw-bold"><i class="fa fa-phone"></i> Phone Number</label>
+                    <input type="text" name="phone" id="phone" class="form-control" placeholder="+254 700 000 000">
+                </div>
             </div>
 
-            <div class="mb-4">
-                <label for="email" class="form-label">
-                    <i class="fa fa-envelope"></i> Email Address
-                </label>
-                <input 
-                    type="email" 
-                    name="email" 
-                    id="email"
-                    class="form-control" 
-                    placeholder="your.email@example.com"
-                >
-                <small class="text-muted">Optional - used for notifications</small>
-            </div>
-
-            <div class="mb-4">
-                <label for="password" class="form-label">
-                    <i class="fa fa-lock"></i> Password
-                </label>
-                <input 
-                    type="password" 
-                    name="password" 
-                    id="password"
-                    class="form-control" 
-                    placeholder="Create a strong password"
-                    required
-                    minlength="8"
-                >
-                <small class="text-muted">Minimum 8 characters</small>
-            </div>
-
-            <div class="mb-4">
-                <label for="position" class="form-label">
-                    <i class="fa fa-briefcase"></i> Position/Title
-                </label>
-                <input 
-                    type="text" 
-                    name="position" 
-                    id="position"
-                    class="form-control" 
-                    placeholder="e.g., Sales Assistant, Manager, Customer Service"
-                >
-            </div>
-
-            <div class="mb-4">
-                <label for="phone" class="form-label">
-                    <i class="fa fa-phone"></i> Phone Number
-                </label>
-                <input 
-                    type="text" 
-                    name="phone" 
-                    id="phone"
-                    class="form-control" 
-                    placeholder="e.g., +1234567890"
-                >
-            </div>
-
-            <button type="submit" class="submit-btn">
+            <button type="submit" class="btn btn-primary btn-lg w-100 mt-4">
                 <i class="fa fa-user-plus"></i> Create Staff Account
             </button>
         </form>
 
         <div class="text-center mt-4">
-            <p class="text-muted">
-                Already have an account? 
-                <a href="{% url 'login' %}" class="text-primary fw-bold">Login here</a>
-            </p>
+            <p class="mb-0 cy-muted">Already have access? <a href="{% url 'login' %}" class="fw-bold">Login here</a></p>
         </div>
     </div>
-</div>
+</section>
 {% endblock %}

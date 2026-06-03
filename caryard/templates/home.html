@@ -1,220 +1,209 @@
 {% extends "base.html" %} {% load static %} {% block content %}
-<style>
-    .hero-section {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 60px 20px;
-        border-radius: 15px;
-        margin-bottom: 40px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    }
+<section class="cy-hero" style="--hero-image: url('{% static 'img/car/car-5.jpg' %}');">
+    <div class="cy-hero-content">
+        <span class="cy-eyebrow"><i class="fa fa-gauge-high"></i> Premium vehicle marketplace</span>
+        <h1>Find the car that fits your next chapter.</h1>
+        <p>Browse verified listings, compare prices, message sellers, book a yard tour, and complete secure payments from one polished dashboard.</p>
+        <div class="cy-hero-actions">
+            <a href="{% url 'search' %}" class="cy-btn-primary"><i class="fa fa-search"></i> Search Vehicles</a>
+            <a href="{% url 'add_vehicle' %}" class="cy-btn-secondary"><i class="fa fa-plus"></i> List a Vehicle</a>
+        </div>
+    </div>
+</section>
 
-    .vehicle-card {
-        transition: all 0.3s ease;
-        border: none;
-        overflow: hidden;
-        position: relative;
-    }
+<section class="cy-stats-grid" aria-label="Marketplace statistics">
+    <div class="cy-stat-card">
+        <span class="cy-stat-icon"><i class="fa fa-car"></i></span>
+        <span class="cy-stat-value">{{ stats.vehicle_count }}</span>
+        <span class="cy-stat-label">Vehicles available</span>
+    </div>
+    <div class="cy-stat-card">
+        <span class="cy-stat-icon"><i class="fa fa-users"></i></span>
+        <span class="cy-stat-value">{{ stats.seller_count }}</span>
+        <span class="cy-stat-label">Active sellers</span>
+    </div>
+    <div class="cy-stat-card">
+        <span class="cy-stat-icon"><i class="fa fa-calendar-check"></i></span>
+        <span class="cy-stat-value">{{ stats.booking_count }}</span>
+        <span class="cy-stat-label">Bookings handled</span>
+    </div>
+    <div class="cy-stat-card">
+        <span class="cy-stat-icon"><i class="fa fa-star"></i></span>
+        <span class="cy-stat-value">{{ stats.average_rating|floatformat:1 }}</span>
+        <span class="cy-stat-label">Average rating</span>
+    </div>
+</section>
 
-    .vehicle-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2) !important;
-    }
+<section class="cy-feature-strip" aria-label="Car Yard benefits">
+    <div class="cy-feature-item">
+        <i class="fa fa-shield-halved"></i>
+        <div>
+            <strong>Secure checkout</strong>
+            <span>Vehicle purchases flow through Stripe-backed payment confirmation.</span>
+        </div>
+    </div>
+    <div class="cy-feature-item">
+        <i class="fa fa-route"></i>
+        <div>
+            <strong>Tour bookings</strong>
+            <span>Schedule a yard visit when you want to inspect cars in person.</span>
+        </div>
+    </div>
+    <div class="cy-feature-item">
+        <i class="fa fa-comments"></i>
+        <div>
+            <strong>Seller messaging</strong>
+            <span>Ask direct questions before you commit to a purchase or visit.</span>
+        </div>
+    </div>
+</section>
 
-    .vehicle-card .card-img-top {
-        transition: transform 0.5s ease;
-    }
-
-    .vehicle-card:hover .card-img-top {
-        transform: scale(1.1);
-    }
-
-    .price-badge {
-        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        color: white;
-        font-size: 1.2rem;
-        font-weight: bold;
-        padding: 8px 16px;
-        border-radius: 25px;
-        box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);
-    }
-
-    .seller-badge {
-        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-        color: white;
-        padding: 6px 12px;
-        border-radius: 20px;
-        font-size: 0.9rem;
-    }
-
-    .action-btn {
-        transition: all 0.3s ease;
-        border-radius: 25px;
-        font-weight: 500;
-        padding: 8px 20px;
-    }
-
-    .action-btn:hover {
-        transform: scale(1.05);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    }
-
-    .comments-section {
-        background: #f8f9fa;
-        border-radius: 10px;
-        padding: 15px;
-        margin-top: 15px;
-    }
-
-    .comment-item {
-        padding: 8px;
-        margin: 5px 0;
-        background: white;
-        border-radius: 8px;
-        border-left: 3px solid #3498db;
-    }
-
-    .fade-in {
-        animation: fadeIn 0.6s ease-in;
-    }
-
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .page-title {
-        font-size: 2.5rem;
-        font-weight: 700;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-        margin-bottom: 10px;
-    }
-
-    .page-subtitle {
-        font-size: 1.1rem;
-        opacity: 0.9;
-    }
-</style>
-
-<!-- Hero Section -->
-<div class="hero-section text-center fade-in">
-    <h1 class="page-title">
-        <i class="fa fa-car"></i> Welcome to Car Yard
-    </h1>
-    <p class="page-subtitle">Discover your perfect vehicle from our premium collection</p>
-</div>
-
-<!-- Vehicles Grid -->
-<div class="row g-4">
-    {% for vehicle in vehicles %}
-    <div class="col-md-4 col-sm-6 fade-in vehicle-item" data-index="{{ forloop.counter0 }}">
-        <div class="card vehicle-card shadow-lg border-0 h-100 rounded-3">
-            <!-- Vehicle Image with Overlay -->
-            <div style="position: relative; overflow: hidden;">
-                {% if vehicle.image %}
-                <img src="{{ vehicle.image.url }}" class="card-img-top img-fluid" alt="{{ vehicle.title }}" style="height: 250px; object-fit: cover;">
-                {% else %}
-                <img src="{% static 'images/no-image.png' %}" class="card-img-top img-fluid" alt="No image available" style="height: 250px; object-fit: cover;">
-                {% endif %}
-                <div style="position: absolute; top: 10px; right: 10px;">
-                    {% if vehicle.average_rating %}
-                    <span class="badge bg-warning text-dark">
-                        <i class="fa fa-star"></i> {{ vehicle.average_rating|floatformat:1 }}
-                    </span>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Card Body -->
-            <div class="card-body d-flex flex-column">
-                <h5 class="card-title fw-bold text-dark mb-3" style="font-size: 1.3rem;">{{ vehicle.title }}</h5>
-                <p class="card-text text-muted" style="line-height: 1.6;">{{ vehicle.description|truncatewords:20 }}</p>
-
-                <div class="mt-auto d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <span class="price-badge">
-                        <i class="fa fa-dollar-sign"></i> {{ vehicle.price|floatformat:2 }}
-                    </span>
-                    <span class="seller-badge">
-                        <i class="fa fa-user"></i> {{ vehicle.seller.user.username }}
-                    </span>
-                </div>
-            </div>
-
-            <!-- Card Footer -->
-            <div class="card-footer bg-white border-top">
-                <div class="d-flex justify-content-between gap-2 mb-3">
-                    <a href="{% url 'vehicle_detail' vehicle.pk %}" class="btn btn-primary action-btn flex-fill">
-                        <i class="fa fa-eye"></i> View Details
-                    </a>
-                    <a href="{% url 'book_vehicle' vehicle.pk %}" class="btn btn-success action-btn flex-fill">
-                        <i class="fa fa-book"></i> Book Now
-                    </a>
-                </div>
-
-                <!-- Comments Section -->
-                <div class="comments-section">
-                    <h6 class="text-secondary mb-3">
-                        <i class="fa fa-comments"></i> Comments
-                        <span class="badge bg-secondary ms-2">{{ vehicle.comment_set.count }}</span>
-                    </h6>
-                    <div style="max-height: 120px; overflow-y: auto;" id="comments-{{ vehicle.id }}">
-                        {% for comment in vehicle.comment_set.all|slice:":3" %}
-                        <div class="comment-item">
-                            <strong class="text-primary">{{ comment.user.username }}</strong>:
-                            <span class="text-dark">{{ comment.content|truncatewords:10 }}</span>
-                        </div>
-                        {% empty %}
-                        <p class="text-muted small mb-0">No comments yet. Be the first to comment!</p>
-                        {% endfor %}
+{% if featured_vehicles %}
+<section class="cy-panel mb-4">
+    <div class="cy-section-heading mt-0">
+        <div>
+            <h2>Fresh on the Yard</h2>
+            <p>Recently added vehicles worth a closer look.</p>
+        </div>
+        {% if price_stats.min_price and price_stats.max_price %}
+        <span class="cy-chip"><i class="fa fa-tag"></i> ${{ price_stats.min_price|floatformat:0 }} - ${{ price_stats.max_price|floatformat:0 }}</span> {% endif %}
+    </div>
+    <div class="row g-3">
+        {% for vehicle in featured_vehicles %}
+        <div class="col-lg-4">
+            <a href="{% url 'vehicle_detail' vehicle.pk %}" class="text-decoration-none">
+                <div class="cy-feature-item h-100">
+                    <i class="fa fa-car-side"></i>
+                    <div>
+                        <strong>{{ vehicle.title }}</strong>
+                        <span>${{ vehicle.price|floatformat:2 }} by {{ vehicle.seller.user.username }}</span>
                     </div>
-
-                    {% if user.is_authenticated %}
-                    <form class="comment-form mt-3" data-vehicle-id="{{ vehicle.id }}">
-                        <div class="input-group">
-                            <input type="text" name="content" class="form-control form-control-sm" placeholder="Write a comment..." required style="border-radius: 20px 0 0 20px;">
-                            <button class="btn btn-primary btn-sm" type="submit" style="border-radius: 0 20px 20px 0;">
-                                <i class="fa fa-paper-plane"></i>
-                            </button>
-                        </div>
-                    </form>
-                    {% else %}
-                    <p class="text-muted small text-center mt-2 mb-0">
-                        <a href="{% url 'login' %}" class="text-primary">Login</a> to comment
-                    </p>
-                    {% endif %}
                 </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section>
+    <div class="cy-section-heading">
+        <div>
+            <h2>Browse Inventory</h2>
+            <p>{{ stats.vehicle_count }} vehicle{{ stats.vehicle_count|pluralize }} ready to view, book, or discuss.</p>
+        </div>
+        <a href="{% url 'search' %}" class="btn btn-outline-primary"><i class="fa fa-filter"></i> Filter Inventory</a>
+    </div>
+
+    <div class="row g-4">
+        {% for vehicle in vehicles %}
+        <div class="col-lg-4 col-md-6 vehicle-item" data-index="{{ forloop.counter0 }}">
+            <article class="cy-vehicle-card">
+                <div class="cy-card-media">
+                    {% if vehicle.image %}
+                    <img src="{{ vehicle.image.url }}" alt="{{ vehicle.title }}"> {% else %}
+                    <img src="{% static 'img/car/car-14.jpg' %}" alt="Vehicle placeholder"> {% endif %}
+                    <span class="cy-price-tag">${{ vehicle.price|floatformat:2 }}</span> {% if vehicle.average_rating %}
+                    <span class="cy-rating-tag"><i class="fa fa-star"></i> {{ vehicle.average_rating|floatformat:1 }}</span> {% endif %}
+                </div>
+                <div class="cy-card-body">
+                    <div class="d-flex justify-content-between gap-2 align-items-start mb-2">
+                        <h3 class="cy-card-title">{{ vehicle.title }}</h3>
+                    </div>
+                    <p class="cy-card-description">{{ vehicle.description|truncatewords:22 }}</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="cy-chip"><i class="fa fa-user"></i> {{ vehicle.seller.user.username }}</span>
+                        <span class="cy-chip"><i class="fa fa-comments"></i> {{ vehicle.comment_set.count }} comment{{ vehicle.comment_set.count|pluralize }}</span>
+                    </div>
+                </div>
+                <div class="cy-card-actions">
+                    <a href="{% url 'vehicle_detail' vehicle.pk %}" class="btn btn-primary"><i class="fa fa-eye"></i> Details</a>
+                    <a href="{% url 'book_vehicle' vehicle.pk %}" class="btn btn-success"><i class="fa fa-calendar-check"></i> Book</a>
+                </div>
+                <div class="px-3 pb-3">
+                    <div class="border-top pt-3">
+                        <div id="comments-{{ vehicle.id }}" class="small">
+                            {% for comment in vehicle.comment_set.all|slice:":2" %}
+                            <div class="mb-2">
+                                <strong>{{ comment.user.username }}</strong>
+                                <span class="cy-muted">{{ comment.content|truncatewords:10 }}</span>
+                            </div>
+                            {% empty %}
+                            <p class="cy-muted mb-2">No comments yet.</p>
+                            {% endfor %}
+                        </div>
+                        {% if user.is_authenticated %}
+                        <form class="comment-form mt-2" data-vehicle-id="{{ vehicle.id }}">
+                            {% csrf_token %}
+                            <div class="input-group">
+                                <input type="text" name="content" class="form-control form-control-sm" placeholder="Add a quick comment" required>
+                                <button class="btn btn-primary btn-sm" type="submit" aria-label="Post comment">
+                                    <i class="fa fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </form>
+                        {% else %}
+                        <a href="{% url 'login' %}" class="small">Login to comment</a> {% endif %}
+                    </div>
+                </div>
+            </article>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="cy-panel text-center py-5">
+                <i class="fa fa-car" style="font-size: 4rem; color: #b8c2cc; margin-bottom: 20px;"></i>
+                <h3 class="fw-bold">No vehicles available right now</h3>
+                <p class="cy-muted">Add the first listing and start building the yard.</p>
+                {% if user.is_authenticated %}
+                <a href="{% url 'add_vehicle' %}" class="btn btn-primary mt-2"><i class="fa fa-plus"></i> Add Vehicle</a> {% endif %}
             </div>
         </div>
+        {% endfor %}
     </div>
-    {% empty %}
-    <div class="col-12">
-        <div class="text-center py-5">
-            <i class="fa fa-car" style="font-size: 4rem; color: #ccc; margin-bottom: 20px;"></i>
-            <h3 class="text-muted">No vehicles available at the moment</h3>
-            <p class="text-muted">Check back later for new listings!</p>
-            {% if user.is_authenticated %}
-            <a href="{% url 'add_vehicle' %}" class="btn btn-primary mt-3">
-                <i class="fa fa-plus"></i> Add Your First Vehicle
-            </a>
-            {% endif %}
-        </div>
-    </div>
-    {% endfor %}
-</div>
+</section>
 
 <script>
-    // Set animation delays for vehicle cards
     document.addEventListener('DOMContentLoaded', function() {
-        const vehicleItems = document.querySelectorAll('.vehicle-item');
-        vehicleItems.forEach((item, index) => {
-            item.style.animationDelay = (index * 0.1) + 's';
+        document.querySelectorAll('.vehicle-item').forEach((item, index) => {
+            item.style.animationDelay = (index * 0.06) + 's';
+        });
+
+        document.querySelectorAll('.comment-form').forEach((form) => {
+            form.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                const vehicleId = form.dataset.vehicleId;
+                const input = form.querySelector('input[name="content"]');
+                const submitButton = form.querySelector('button[type="submit"]');
+                const formData = new FormData(form);
+                formData.append('vehicle_id', vehicleId);
+                submitButton.disabled = true;
+
+                try {
+                    const response = await fetch("{% url 'ajax_comment' %}", {
+                        method: "POST",
+                        body: formData,
+                        headers: {
+                            "X-CSRFToken": form.querySelector('input[name="csrfmiddlewaretoken"]').value
+                        }
+                    });
+                    const data = await response.json();
+                    if (data.ok) {
+                        const comments = document.getElementById(`comments-${vehicleId}`);
+                        const item = document.createElement('div');
+                        const author = document.createElement('strong');
+                        const content = document.createElement('span');
+                        item.className = 'mb-2';
+                        author.textContent = data.user + ' ';
+                        content.className = 'cy-muted';
+                        content.textContent = data.content;
+                        item.append(author, content);
+                        comments.prepend(item);
+                        input.value = '';
+                    }
+                } finally {
+                    submitButton.disabled = false;
+                }
+            });
         });
     });
 </script>

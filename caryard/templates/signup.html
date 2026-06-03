@@ -1,59 +1,65 @@
-{% extends "base.html" %} {% load static %} {% block content %} {% load widget_tweaks %}
-<div class="d-flex justify-content-center align-items-center mt-5">
-    <div class="card shadow-lg p-4" style="max-width: 500px; width: 100%;">
-        <h3 class="text-center mb-4"><i class="fa fa-user-plus"></i> Sign Up</h3>
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
 
-        {% if messages %} {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+{% block content %}
+<section class="cy-auth-shell">
+    <aside class="cy-auth-aside" style="--hero-image: url('{% static 'img/latest-offers/img-1.jpg' %}');">
+        <span class="cy-eyebrow"><i class="fa fa-key"></i> Buyer and seller access</span>
+        <h1>Create your Car Yard account.</h1>
+        <p>One account lets you browse inventory, message sellers, book tours, purchase vehicles, and list your own car for sale.</p>
+        <div class="cy-feature-strip" style="grid-template-columns: 1fr; margin-bottom: 0;">
+            <div class="cy-feature-item" style="background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.22);">
+                <i class="fa fa-shield-halved"></i>
+                <div><strong>Secure by default</strong><span>Payments and booking updates stay tied to your account.</span></div>
+            </div>
         </div>
-        {% endfor %} {% endif %}
+    </aside>
+
+    <div class="cy-auth-form">
+        <h2 class="fw-bold mb-2">Sign Up</h2>
+        <p class="cy-muted mb-4">Fill in the details below to start using Car Yard.</p>
 
         <form method="post">
             {% csrf_token %}
-
-            <div class="mb-3">
-                <label for="{{ form.username.id_for_label }}" class="form-label"><i class="fa fa-user"></i> Username</label> {{ form.username|add_class:"form-control" }} {% if form.username.errors %}
-                <div class="text-danger small">{{ form.username.errors.0 }}</div>
-                {% endif %}
-            </div>
-
-            <div class="mb-3">
-                <label for="{{ form.email.id_for_label }}" class="form-label"><i class="fa fa-envelope"></i> Email</label> {{ form.email|add_class:"form-control" }} {% if form.email.errors %}
-                <div class="text-danger small">{{ form.email.errors.0 }}</div>
-                {% endif %}
-            </div>
-
-            <div class="mb-3">
-                <label for="{{ form.password.id_for_label }}" class="form-label"><i class="fa fa-lock"></i> Password</label> {{ form.password|add_class:"form-control" }} {% if form.password.errors %}
-                <div class="text-danger small">{{ form.password.errors.0 }}</div>
-                {% endif %}
-            </div>
-
-            <div class="mb-3">
-                <label for="{{ form.confirm_password.id_for_label }}" class="form-label"><i class="fa fa-lock"></i> Confirm Password</label> {{ form.confirm_password|add_class:"form-control" }} {% if form.confirm_password.errors %}
-                <div class="text-danger small">{{ form.confirm_password.errors.0 }}</div>
-                {% endif %}
+            <div class="cy-form-grid">
+                <div>
+                    <label for="{{ form.username.id_for_label }}" class="form-label fw-bold"><i class="fa fa-user"></i> Username</label>
+                    {{ form.username|add_class:"form-control" }}
+                    {% if form.username.errors %}<div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>{% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.email.id_for_label }}" class="form-label fw-bold"><i class="fa fa-envelope"></i> Email</label>
+                    {{ form.email|add_class:"form-control" }}
+                    {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>{% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.password.id_for_label }}" class="form-label fw-bold"><i class="fa fa-lock"></i> Password</label>
+                    {{ form.password|add_class:"form-control" }}
+                    <span class="cy-form-help">Use at least 8 characters.</span>
+                    {% if form.password.errors %}<div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>{% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.confirm_password.id_for_label }}" class="form-label fw-bold"><i class="fa fa-lock"></i> Confirm Password</label>
+                    {{ form.confirm_password|add_class:"form-control" }}
+                    {% if form.confirm_password.errors %}<div class="text-danger small mt-1">{{ form.confirm_password.errors.0 }}</div>{% endif %}
+                </div>
             </div>
 
             {% if form.non_field_errors %}
-            <div class="alert alert-danger">
-                {% for error in form.non_field_errors %} {{ error }} {% endfor %}
+            <div class="alert alert-danger mt-3">
+                {% for error in form.non_field_errors %}{{ error }}{% endfor %}
             </div>
             {% endif %}
 
-            <button type="submit" class="btn btn-success w-100">
-        <i class="fa fa-user-plus"></i> Create Account
-      </button>
+            <button type="submit" class="btn btn-success btn-lg w-100 mt-4">
+                <i class="fa fa-user-plus"></i> Create Account
+            </button>
         </form>
 
-        <hr>
-        <div class="text-center">
-            <p class="mb-0">
-                Already have an account? <a href="{% url 'login' %}"><i class="fa fa-sign-in-alt"></i> Login here</a>
-            </p>
+        <div class="text-center mt-4">
+            <p class="mb-0 cy-muted">Already have an account? <a href="{% url 'login' %}" class="fw-bold">Login here</a></p>
         </div>
     </div>
-</div>
+</section>
 {% endblock %}
