@@ -26,13 +26,12 @@ class Buyer(models.Model):
 
 class Vehicle(models.Model):
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name="vehicles")
-    title = models.CharField(max_length=200, null =False)
+    title = models.CharField(max_length=200, null =True)
     description = models.TextField()
-    price = models.DecimalField(max_digits=10, decimal_places=2, null = False)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null = True)
     image = models.ImageField(upload_to="vehicles/")
     created = models.DateTimeField(default=timezone.now)
-    buyer = models.ForeignKey(Buyer, on_delete=models.CASCADE, null=False, blank=False, related_name="purchased_vehicle")
-    uploaded_date = models.DateField(default=timezone.now)
+  
 
     def average_rating(self):
         ratings = self.rating_set.all()
@@ -47,11 +46,10 @@ class Vehicle(models.Model):
 
 class Staff(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    position = models.CharField(max_length=100, blank=False, null=False)
-    phone = models.CharField(max_length=20, blank=False, null=False)
+    position = models.CharField(max_length=100, blank=True, null=True, default='staff')
+    phone = models.CharField(max_length=20, blank=True, null=True)
     assigned_since = models.DateTimeField(default=timezone.now)
-    email= models.EmailField(blank=False, null=False)
-    employee_date = models.DateField(blank=False, null=False)
+ 
     def __str__(self):
         return f"{self.user.username} ({self.position or 'Staff'})"
 

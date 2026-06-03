@@ -1,0 +1,79 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | Car Yard Admin{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    :root {
+        --primary: #14213d;
+        --secondary: #0f4c81;
+        --accent: #fca311;
+        --link-fg: #0f4c81;
+        --link-selected-fg: #d62828;
+        --header-bg: #14213d;
+        --header-color: #ffffff;
+        --breadcrumbs-bg: #0f4c81;
+    }
+
+    #header {
+        min-height: 72px;
+        background:
+            linear-gradient(90deg, rgba(20, 33, 61, 0.98), rgba(20, 33, 61, 0.84)),
+            url("{% static 'img/car/car-14.jpg' %}") center / cover;
+        box-shadow: 0 12px 28px rgba(20, 33, 61, 0.18);
+    }
+
+    #branding h1,
+    #branding h1 a:link,
+    #branding h1 a:visited {
+        color: #fff;
+        font-weight: 800;
+        letter-spacing: 0;
+    }
+
+    #user-tools,
+    #user-tools a {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .module {
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #e7edf5;
+        box-shadow: 0 12px 28px rgba(20, 33, 61, 0.08);
+    }
+
+    .module h2,
+    .module caption,
+    .inline-group h2 {
+        background: #14213d;
+        color: #fff;
+        font-weight: 700;
+    }
+
+    div.breadcrumbs {
+        background: #0f4c81;
+    }
+
+    .button,
+    input[type=submit],
+    input[type=button],
+    .submit-row input,
+    a.button {
+        border-radius: 6px;
+        background: #0f4c81;
+    }
+
+    .button.default,
+    input[type=submit].default,
+    .submit-row input.default {
+        background: #d62828;
+    }
+</style>
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">Car Yard Admin</a></h1>
+{% endblock %}

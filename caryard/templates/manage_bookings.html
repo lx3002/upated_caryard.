@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<section class="cy-dashboard-hero" style="--hero-image: url('{% static 'img/car/car-5.jpg' %}');">
+    <span class="cy-eyebrow"><i class="fa fa-screwdriver-wrench"></i> Admin dashboard</span>
+    <h1>Manage Bookings</h1>
+    <p class="mb-0">Assign staff, monitor booking progress, and keep buyer communication moving.</p>
+</section>
+
+<section class="cy-stats-grid" style="margin-top: -48px;">
+    <div class="cy-stat-card">
+        <span class="cy-stat-icon"><i class="fa fa-clipboard-list"></i></span>
+        <span class="cy-stat-value">{{ total_bookings }}</span>
+        <span class="cy-stat-label">Total bookings</span>
+    </div>
+    <div class="cy-stat-card">
+        <span class="cy-stat-icon"><i class="fa fa-hourglass-half"></i></span>
+        <span class="cy-stat-value">{{ pending_count }}</span>
+        <span class="cy-stat-label">Pending</span>
+    </div>
+    <div class="cy-stat-card">
+        <span class="cy-stat-icon"><i class="fa fa-circle-check"></i></span>
+        <span class="cy-stat-value">{{ confirmed_count }}</span>
+        <span class="cy-stat-label">Confirmed</span>
+    </div>
+    <div class="cy-stat-card">
+        <span class="cy-stat-icon"><i class="fa fa-user-plus"></i></span>
+        <span class="cy-stat-value">{{ unassigned_count }}</span>
+        <span class="cy-stat-label">Unassigned</span>
+    </div>
+</section>
+
+<section class="cy-panel">
+    <div class="cy-toolbar">
+        <div>
+            <h2 class="fw-bold mb-1">Assignment Queue</h2>
+            <p class="cy-muted mb-0">Choose a staff member and assign ownership directly from each row.</p>
+        </div>
+        <a href="{% url 'staff_dashboard' %}" class="btn btn-outline-primary"><i class="fa fa-arrow-left"></i> Staff Dashboard</a>
+    </div>
+
+    {% if bookings %}
+    <div class="cy-table-wrap">
+        <table class="table cy-table">
+            <thead>
+                <tr>
+                    <th>Booking</th>
+                    <th>Buyer</th>
+                    <th>Status</th>
+                    <th>Assigned Staff</th>
+                    <th>Booking Date</th>
+                    <th>Assign / Message</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                <tr>
+                    <td>
+                        <strong>
+                            {% if booking.booking_type == 'TOUR' %}
+                            <i class="fa fa-route text-success"></i> Car Yard Tour
+                            {% else %}
+                            <i class="fa fa-car text-primary"></i> {{ booking.vehicle.title|default:"Vehicle booking" }}
+                            {% endif %}
+                        </strong>
+                        {% if booking.vehicle %}
+                        <small class="d-block cy-muted">${{ booking.vehicle.price|floatformat:2 }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong>{{ booking.buyer.user.username }}</strong>
+                        <small class="d-block cy-muted">{{ booking.buyer.user.email|default:"No email" }}</small>
+                    </td>
+                    <td>
+                        <span class="cy-status {% if booking.status == 'CONFIRMED' %}cy-status-confirmed{% elif booking.status == 'PENDING' %}cy-status-pending{% else %}cy-status-cancelled{% endif %}">
+                            {{ booking.status }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if booking.staff %}
+                        <strong class="text-success">{{ booking.staff.user.username }}</strong>
+                        <small class="d-block cy-muted">{{ booking.staff.position|default:"Staff" }}</small>
+                        {% else %}
+                        <span class="cy-muted">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ booking.date|date:"M d, Y H:i" }}</td>
+                    <td>
+                        <form method="POST" class="d-flex flex-wrap align-items-center gap-2">
+                            {% csrf_token %}
+                            <input type="hidden" name="booking_id" value="{{ booking.id }}">
+                            <select name="staff_id" class="form-select form-select-sm" style="max-width: 220px;" required>
+                                <option value="">Select staff</option>
+                                {% for s in staff_members %}
+                                <option value="{{ s.id }}" {% if booking.staff and booking.staff.id == s.id %}selected{% endif %}>
+                                    {{ s.user.username }}{% if s.position %} ({{ s.position }}){% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-primary"><i class="fa fa-user-check"></i> Assign</button>
+                            <a href="{% url 'chat_with_user' booking.buyer.user.id %}" class="btn btn-sm btn-outline-success"><i class="fa fa-comment"></i> Message</a>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fa fa-clipboard-check" style="font-size: 4rem; color: #b8c2cc; margin-bottom: 20px;"></i>
+        <h3 class="fw-bold">No bookings found</h3>
+        <p class="cy-muted">New purchase and tour requests will show up here.</p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

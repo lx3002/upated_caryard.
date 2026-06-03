@@ -1,3 +1,548 @@
+/* Car Yard UI Refresh */
+:root {
+    --cy-ink: #14213d;
+    --cy-muted: #667085;
+    --cy-line: #e7edf5;
+    --cy-red: #d62828;
+    --cy-gold: #fca311;
+    --cy-blue: #0f4c81;
+    --cy-green: #16856f;
+    --cy-surface: #ffffff;
+    --cy-shadow: 0 18px 45px rgba(20, 33, 61, 0.12);
+}
+
+.car-yard-app {
+    min-height: 100%;
+    background:
+        linear-gradient(180deg, rgba(248, 250, 252, 0.94), rgba(241, 245, 249, 0.98)),
+        url("/static/img/latest-offers/img-1.jpg") center top / cover fixed;
+    color: var(--cy-ink);
+}
+
+.app-content,
+.app-alerts {
+    background: transparent !important;
+}
+
+.app-content {
+    padding-bottom: 48px;
+}
+
+.cy-hero {
+    position: relative;
+    overflow: hidden;
+    min-height: 430px;
+    border-radius: 8px;
+    background:
+        linear-gradient(90deg, rgba(9, 18, 32, 0.92) 0%, rgba(9, 18, 32, 0.68) 48%, rgba(9, 18, 32, 0.18) 100%),
+        var(--hero-image, url("/static/img/car/car-5.jpg")) center / cover;
+    box-shadow: var(--cy-shadow);
+    color: #fff;
+    margin-bottom: 28px;
+}
+
+.cy-hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 700px;
+    padding: clamp(32px, 6vw, 72px);
+}
+
+.cy-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.cy-hero h1,
+.cy-hero p,
+.cy-hero span,
+.cy-hero i {
+    color: #fff;
+}
+
+.cy-hero h1 {
+    margin: 18px 0 14px;
+    font-size: clamp(2.2rem, 5vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1;
+}
+
+.cy-hero p {
+    max-width: 610px;
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.86);
+}
+
+.cy-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 28px;
+}
+
+.cy-btn-primary,
+.cy-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 46px;
+    border-radius: 6px;
+    padding: 11px 18px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.cy-btn-primary {
+    background: var(--cy-red);
+    color: #fff !important;
+    border: 1px solid var(--cy-red);
+}
+
+.cy-btn-secondary {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.cy-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin: -64px 24px 36px;
+    position: relative;
+    z-index: 4;
+}
+
+.cy-stat-card,
+.cy-panel,
+.cy-vehicle-card {
+    background: var(--cy-surface);
+    border: 1px solid var(--cy-line);
+    border-radius: 8px;
+    box-shadow: 0 12px 28px rgba(20, 33, 61, 0.08);
+}
+
+.cy-stat-card {
+    padding: 18px;
+}
+
+.cy-stat-icon {
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    background: rgba(214, 40, 40, 0.1);
+    color: var(--cy-red);
+}
+
+.cy-stat-value {
+    display: block;
+    font-size: clamp(1.55rem, 3vw, 2.2rem);
+    line-height: 1;
+    font-weight: 800;
+    color: var(--cy-ink);
+}
+
+.cy-stat-label {
+    display: block;
+    margin-top: 6px;
+    color: var(--cy-muted);
+    font-size: 0.92rem;
+}
+
+.cy-section-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 18px;
+    margin: 28px 0 18px;
+}
+
+.cy-section-heading h2 {
+    margin: 0;
+    font-weight: 800;
+    color: var(--cy-ink);
+}
+
+.cy-section-heading p {
+    margin: 6px 0 0;
+    color: var(--cy-muted);
+}
+
+.cy-vehicle-card {
+    overflow: hidden;
+    height: 100%;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.cy-vehicle-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 18px 42px rgba(20, 33, 61, 0.16);
+}
+
+.cy-card-media {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 16 / 10;
+    background: #d9e1ea;
+}
+
+.cy-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.45s ease;
+}
+
+.cy-vehicle-card:hover .cy-card-media img {
+    transform: scale(1.05);
+}
+
+.cy-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 7px 11px;
+    background: #f4f7fb;
+    color: var(--cy-muted);
+    font-size: 0.86rem;
+    font-weight: 700;
+}
+
+.cy-price-tag {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    border-radius: 6px;
+    padding: 9px 12px;
+    background: rgba(22, 133, 111, 0.95);
+    color: #fff !important;
+    font-weight: 800;
+    backdrop-filter: blur(6px);
+}
+
+.cy-rating-tag {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    border-radius: 999px;
+    padding: 7px 10px;
+    background: rgba(255, 255, 255, 0.92);
+    color: #7a4b00 !important;
+    font-weight: 800;
+}
+
+.cy-card-body {
+    padding: 18px;
+}
+
+.cy-card-title {
+    min-height: 2.6em;
+    margin-bottom: 8px;
+    font-size: 1.18rem;
+    font-weight: 800;
+    color: var(--cy-ink);
+}
+
+.cy-card-description {
+    min-height: 78px;
+    color: var(--cy-muted);
+}
+
+.cy-card-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 0 18px 18px;
+}
+
+.cy-card-actions .btn {
+    min-height: 42px;
+    border-radius: 6px;
+    font-weight: 700;
+}
+
+.cy-panel {
+    padding: clamp(20px, 4vw, 32px);
+}
+
+.cy-feature-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin: 28px 0;
+}
+
+.cy-feature-item {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 18px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid var(--cy-line);
+}
+
+.cy-feature-item i {
+    color: var(--cy-red);
+    font-size: 1.3rem;
+    margin-top: 3px;
+}
+
+.cy-feature-item strong {
+    display: block;
+    color: var(--cy-ink);
+}
+
+.cy-feature-item span {
+    display: block;
+    color: var(--cy-muted);
+    font-size: 0.92rem;
+}
+
+.cy-muted {
+    color: var(--cy-muted) !important;
+}
+
+.cy-dashboard-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    padding: clamp(26px, 5vw, 52px);
+    margin-bottom: 24px;
+    background:
+        linear-gradient(90deg, rgba(13, 25, 43, 0.94), rgba(13, 25, 43, 0.62)),
+        var(--hero-image, url("/static/img/car/car-14.jpg")) center / cover;
+    box-shadow: var(--cy-shadow);
+    color: #fff;
+}
+
+.cy-dashboard-hero h1,
+.cy-dashboard-hero p,
+.cy-dashboard-hero span,
+.cy-dashboard-hero i {
+    color: #fff;
+}
+
+.cy-dashboard-hero h1 {
+    margin: 12px 0 8px;
+    font-size: clamp(2rem, 4vw, 3.4rem);
+    font-weight: 800;
+}
+
+.cy-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.cy-table-wrap {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid var(--cy-line);
+    background: #fff;
+}
+
+.cy-table {
+    margin-bottom: 0;
+    min-width: 860px;
+}
+
+.cy-table thead th {
+    background: #101828;
+    color: #fff;
+    border-color: #101828;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+}
+
+.cy-table td,
+.cy-table th {
+    vertical-align: middle;
+    padding: 14px;
+}
+
+.cy-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 104px;
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.cy-status-pending {
+    background: #fff3cd;
+    color: #8a5a00 !important;
+}
+
+.cy-status-confirmed {
+    background: #d1f3e8;
+    color: #09634f !important;
+}
+
+.cy-status-cancelled {
+    background: #fde2e2;
+    color: #9b1c1c !important;
+}
+
+.cy-auth-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 0.92fr) minmax(360px, 1fr);
+    gap: 0;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: var(--cy-shadow);
+    border: 1px solid var(--cy-line);
+}
+
+.cy-auth-aside {
+    min-height: 640px;
+    padding: clamp(28px, 5vw, 56px);
+    background:
+        linear-gradient(180deg, rgba(9, 18, 32, 0.9), rgba(9, 18, 32, 0.55)),
+        var(--hero-image, url("/static/img/latest-offers/img-1.jpg")) center / cover;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.cy-auth-aside h1,
+.cy-auth-aside p,
+.cy-auth-aside span,
+.cy-auth-aside i,
+.cy-auth-aside strong {
+    color: #fff;
+}
+
+.cy-auth-aside h1 {
+    font-weight: 800;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+}
+
+.cy-auth-form {
+    padding: clamp(26px, 5vw, 54px);
+}
+
+.cy-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.cy-form-grid .full {
+    grid-column: 1 / -1;
+}
+
+.cy-form-control,
+.cy-auth-form .form-control,
+.cy-auth-form .form-select,
+.cy-panel .form-control,
+.cy-panel .form-select {
+    border: 1px solid #d0d5dd;
+    border-radius: 6px;
+    min-height: 46px;
+    padding: 10px 12px;
+}
+
+.cy-auth-form textarea.form-control,
+.cy-panel textarea.form-control {
+    min-height: 130px;
+}
+
+.cy-form-help {
+    display: block;
+    color: var(--cy-muted);
+    font-size: 0.85rem;
+    margin-top: 6px;
+}
+
+.cy-image-panel {
+    overflow: hidden;
+    border-radius: 8px;
+    border: 1px solid var(--cy-line);
+    background: #fff;
+    box-shadow: 0 12px 28px rgba(20, 33, 61, 0.08);
+}
+
+.cy-image-panel img {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    display: block;
+}
+
+.cy-admin-brand {
+    color: #fff;
+    font-weight: 800;
+}
+
+@media (max-width: 991px) {
+    .cy-stats-grid,
+    .cy-feature-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767px) {
+    .cy-hero {
+        min-height: 520px;
+        background:
+            linear-gradient(180deg, rgba(9, 18, 32, 0.92), rgba(9, 18, 32, 0.64)),
+            var(--hero-image, url("/static/img/car/car-5.jpg")) center / cover;
+    }
+
+    .cy-hero-content {
+        padding: 28px;
+    }
+
+    .cy-stats-grid {
+        grid-template-columns: 1fr;
+        margin: -42px 12px 28px;
+    }
+
+    .cy-section-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .cy-feature-strip {
+        grid-template-columns: 1fr;
+    }
+
+    .cy-auth-shell,
+    .cy-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .cy-auth-aside {
+        min-height: 360px;
+    }
+}
+
 /* Vehicle Carousel Styles */
 .vehicle-carousel {
     position: fixed;
@@ -35,7 +580,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%);
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.3) 100%);
     z-index: 1;
 }
 
@@ -52,20 +597,20 @@
     font-size: 2.5rem;
     font-weight: bold;
     margin-bottom: 1rem;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 .carousel-content p {
     font-size: 1.2rem;
     margin-bottom: 1.5rem;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .carousel-content .price {
     font-size: 2rem;
     font-weight: bold;
     color: #28a745;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 .carousel-indicators {
@@ -82,7 +627,7 @@
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.5);
+    background: rgba(255, 255, 255, 0.5);
     cursor: pointer;
     transition: all 0.3s ease;
 }
@@ -96,11 +641,10 @@
 .container {
     position: relative;
     z-index: 10;
-    background: rgba(255,255,255,0.95);
+    background: transparent;
     border-radius: 10px;
     margin-top: 20px;
     padding: 20px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
 /* Responsive adjustments */
@@ -111,19 +655,19 @@
         right: 20px;
         max-width: none;
     }
-    
+
     .carousel-content h3 {
         font-size: 1.8rem;
     }
-    
+
     .carousel-content p {
         font-size: 1rem;
     }
-    
+
     .carousel-content .price {
         font-size: 1.5rem;
     }
-    
+
     .container {
         margin-top: 10px;
         padding: 15px;
@@ -136,6 +680,7 @@
         opacity: 0;
         transform: translateY(30px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);

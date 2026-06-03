@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.core.mail import EmailMessage, BadHeaderError
 from django.template.loader import render_to_string
-from django.db.models import Q
+from django.db.models import Avg, Max, Min, Q
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.admin.views.decorators import staff_member_required
 
@@ -224,17 +224,33 @@ def send_tour_booking_email(booking):
 
 # ---------------- HOME ----------------
 def home(request):
-    vehicles = Vehicle.objects.all().order_by('-created')
-    return render(request, 'home.html', {'vehicles': vehicles})
+    vehicles = Vehicle.objects.select_related('seller__user').all().order_by('-created')
+    stats = {
+        "vehicle_count": vehicles.count(),
+        "seller_count": Seller.objects.count(),
+        "booking_count": Booking.objects.count(),
+        "comment_count": Comment.objects.count(),
+        "average_rating": Rating.objects.aggregate(avg=Avg("score"))["avg"] or 0,
+    }
+    price_stats = vehicles.aggregate(min_price=Min("price"), max_price=Max("price"))
+    featured_vehicles = vehicles[:3]
+    return render(request, 'home.html', {
+        'vehicles': vehicles,
+        'stats': stats,
+        'price_stats': price_stats,
+        'featured_vehicles': featured_vehicles,
+    })
 
 
 def vehicle_detail(request, pk):
     vehicle = get_object_or_404(Vehicle, pk=pk)
     booking_form = BookingForm()
+    related_vehicles = Vehicle.objects.filter(seller=vehicle.seller).exclude(pk=vehicle.pk).order_by('-created')[:3]
 
     context = {
         "vehicle": vehicle,
         "booking_form": booking_form,
+        "related_vehicles": related_vehicles,
     }
     return render(request, "vehicle_detail.html", context)
 
@@ -265,6 +281,7 @@ def book_vehicle(request, pk):
         booking_type = request.POST.get('booking_type', 'VEHICLE')
         tour_date_str = request.POST.get('tour_date')
         notes = request.POST.get('notes', '')
+        
         
         # Parse tour_date string to datetime object if provided
         tour_date = None
@@ -504,12 +521,16 @@ def staff_signup(request):
         if User.objects.filter(email=email).exists() and email:
             messages.error(request, "Email already registered.")
             return redirect("staff_signup")
+        if User.objects.filter(phone=phone).exists() and phone:
+            messages.error(request, "try anonther phone number please ")
+            return redirect("staff_signup")
 
         # Create user with staff privileges
         user = User.objects.create_user(
             username=username, 
             password=password,
-            email=email if email else f"{username}@caryard.com"
+            email=email if email else f"{username}@caryard.com",
+            phone=phone if phone else "N/A"
         )
         user.is_staff = True  # Allow access to staff dashboard
         user.save()
@@ -529,7 +550,8 @@ def search(request):
     min_price = request.GET.get("min_price", "")
     max_price = request.GET.get("max_price", "")
 
-    vehicles = Vehicle.objects.all().order_by('-created')
+    vehicles = Vehicle.objects.select_related('seller__user').all().order_by('-created')
+    total_vehicle_count = vehicles.count()
 
     # Search by query (title, description, or seller)
     if query:
@@ -568,6 +590,8 @@ def search(request):
 
     return render(request, template, {
         "vehicles": vehicles,
+        "result_count": vehicles.count(),
+        "total_vehicle_count": total_vehicle_count,
         "query": query,
         "make": make,
         "min_price": min_price,
@@ -811,7 +835,9 @@ def staff_dashboard(request):
     total_bookings = bookings.count()
     pending_count = bookings.filter(status='PENDING').count()
     confirmed_count = bookings.filter(status='CONFIRMED').count()
+    cancelled_count = bookings.filter(status='CANCELLED').count()
     tour_count = bookings.filter(booking_type='TOUR').count()
+    vehicle_booking_count = bookings.filter(booking_type='VEHICLE').count()
 
     return render(request, "staff_dashboard.html", {
         "staff": staff, 
@@ -819,7 +845,9 @@ def staff_dashboard(request):
         "total_bookings": total_bookings,
         "pending_count": pending_count,
         "confirmed_count": confirmed_count,
+        "cancelled_count": cancelled_count,
         "tour_count": tour_count,
+        "vehicle_booking_count": vehicle_booking_count,
     })
 
 
@@ -930,9 +958,9 @@ def manage_bookings(request):
                 selected_staff = Staff.objects.get(id=staff_id)
                 booking.staff = selected_staff
                 booking.save()
-                messages.success(request, f"✅ {selected_staff.user.username} assigned to booking {booking.vehicle.title}.")
+                messages.success(request, f"{selected_staff.user.username} assigned to booking {booking.vehicle.title}.")
             except (Booking.DoesNotExist, Staff.DoesNotExist):
-                messages.error(request, "❌ Invalid booking or staff selected.")
+                messages.error(request, "Invalid booking or staff selected.")
         else:
             messages.warning(request, "Please select both booking and staff before assigning.")
 
@@ -940,7 +968,11 @@ def manage_bookings(request):
 
     return render(request, "manage_bookings.html", {
         "bookings": bookings,
-        "staff_members": staff_members
+        "staff_members": staff_members,
+        "total_bookings": bookings.count(),
+        "pending_count": bookings.filter(status="PENDING").count(),
+        "confirmed_count": bookings.filter(status="CONFIRMED").count(),
+        "unassigned_count": bookings.filter(staff__isnull=True).count(),
     })
 @login_required
 def chat_with_user(request, user_id):

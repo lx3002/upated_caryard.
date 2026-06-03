@@ -2,6 +2,11 @@ from django.contrib import admin
 from .models import Seller, Buyer, Vehicle, Booking, Comment, Rating, Payment, ChatbotLog, Messages
 
 
+admin.site.site_header = "Car Yard Admin"
+admin.site.site_title = "Car Yard Admin"
+admin.site.index_title = "Marketplace Operations"
+
+
 @admin.register(Seller)
 class SellerAdmin(admin.ModelAdmin):
     list_display = ("user",)
@@ -21,9 +26,16 @@ class VehicleAdmin(admin.ModelAdmin):
 
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
-    list_display = ("vehicle", "buyer", "date")
-    list_filter = ("date",)
-    search_fields = ("vehicle__title", "buyer__user__username")
+    list_display = ("booking_label", "buyer", "booking_type", "status", "staff", "date")
+    list_filter = ("booking_type", "status", "staff", "date")
+    search_fields = ("vehicle__title", "buyer__user__username", "buyer__user__email")
+
+    def booking_label(self, obj):
+        if obj.booking_type == "TOUR":
+            return "Car Yard Tour"
+        return obj.vehicle.title if obj.vehicle else "Vehicle booking"
+
+    booking_label.short_description = "Booking"
 
 
 @admin.register(Comment)
