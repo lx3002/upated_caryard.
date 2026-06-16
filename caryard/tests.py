@@ -851,9 +851,7 @@ class StaffDashboardViewTest(TestCase):
         self.assertEqual(response.status_code, 302)  # Redirects away
 
 
-# =============================================================================
-# SIGNAL TESTS
-# =============================================================================
+
 
 class UserSignalTest(TestCase):
     """Unit tests for user-related signals."""
@@ -921,7 +919,7 @@ class BookingSignalTest(TestCase):
         # Check notification was created for seller
         self.assertTrue(Notification.objects.filter(
             user=self.seller_user
-        ).exists())
+        ).exist())
 
 
 class MessageSignalTest(TestCase):
