@@ -33,18 +33,34 @@ Caryard is a Django-based marketplace where Buyers browse and book vehicles and 
 - Notification
 
 ## All Python requirements (runtime + dev notes)
-Pinned runtime / common packages included in `requirements.txt`:
-- Django==4.2.7
-- gunicorn==21.2.0
-- whitenoise==6.5.0
-- Pillow==10.0.0
-- psycopg2-binary==2.9.7
-- django-environ==0.10.0
-- python-dotenv==1.0.0
-- django-crispy-forms==1.14.0
-- crispy-bootstrap5==0.7
-- django-storages==1.15.1
-- boto3==1.28.0
+
+Django==4.2.7
+gunicorn==21.2.0                 # Production WSGI server
+Pillow==10.0.0                   # Image processing (for <ImageField>)
+psycopg2-binary==2.9.7           # PostgreSQL adapter (use for production DB)
+django-environ==0.10.0           # 12-factor environment variable config
+python-dotenv==1.0.0             # .env file support for local development
+django-crispy-forms==1.14.0      # Better form rendering
+crispy-bootstrap5==0.7           # Bootstrap 5 template pack for crispy-forms
+django-storages==1.15.1          # Cloud storage backends (S3, etc.)
+boto3==1.28.0                    # AWS SDK (for S3 + django-storages)
+
+# Development & testing tools
+django-debug-toolbar==3.8.1
+pytest==7.4.2
+pytest-django==4.5.2
+coverage==7.2.8
+
+# Code quality & formatting
+black==24.1.0
+isort==5.12.0
+flake8==6.1.0
+mypy==1.10.0
+pre-commit==4.6.0
+
+# Optional: useful utilities
+sqlalchemy==2.1.20               # Optional for complex DB tasks (if used)
+requests==2.31.0                 # HTTP client for external API calls
 
 Dev & testing
 - django-debug-toolbar==3.8.1
