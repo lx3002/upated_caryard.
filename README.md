@@ -43,7 +43,7 @@ python-dotenv==1.0.0             # .env file support for local development
 django-crispy-forms==1.14.0      # Better form rendering
 crispy-bootstrap5==0.7           # Bootstrap 5 template pack for crispy-forms
 django-storages==1.15.1          # Cloud storage backends (S3, etc.)
-boto3==1.28.0                    # AWS SDK (for S3 + django-storages)
+
 
 # Development & testing tools
 django-debug-toolbar==3.8.1
