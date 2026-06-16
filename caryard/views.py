@@ -281,11 +281,13 @@ def book_vehicle(request, pk):
         booking_type = request.POST.get('booking_type', 'VEHICLE')
         tour_date_str = request.POST.get('tour_date')
         notes = request.POST.get('notes', '')
-        
+
         
         # Parse tour_date string to datetime object if provided
         tour_date = None
         if tour_date_str:
+
+    
             try:
                 # Parse the datetime-local format: "YYYY-MM-DDTHH:MM"
                 tour_date = datetime.strptime(tour_date_str, '%Y-%m-%dT%H:%M')
@@ -340,7 +342,7 @@ def create_stripe_checkout_session(request, booking):
     return session
 
 
-# ---------------- PAYMENT ----------------
+
 @login_required
 def payment_view(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id, buyer__user=request.user)
@@ -944,7 +946,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 
 @staff_member_required
 def manage_bookings(request):
-    """Admin/manager view to assign staff to bookings."""
+    
     bookings = Booking.objects.select_related('vehicle', 'buyer', 'staff').all()
     staff_members = Staff.objects.all()
 
