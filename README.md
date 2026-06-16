@@ -49,14 +49,6 @@ boto3==1.28.0                    # AWS SDK (for S3 + django-storages)
 django-debug-toolbar==3.8.1
 pytest==7.4.2
 pytest-django==4.5.2
-coverage==7.2.8
-
-# Code quality & formatting
-black==24.1.0
-isort==5.12.0
-flake8==6.1.0
-mypy==1.10.0
-pre-commit==4.6.0
 
 # Optional: useful utilities
 sqlalchemy==2.1.20               # Optional for complex DB tasks (if used)
