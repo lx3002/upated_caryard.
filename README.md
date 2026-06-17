@@ -34,49 +34,16 @@ Caryard is a Django-based marketplace where Buyers browse and book vehicles and 
 
 ## All Python requirements (runtime + dev notes)
 
-Django==4.2.7
-gunicorn==21.2.0                 # Production WSGI server
-Pillow==10.0.0                   # Image processing (for <ImageField>)
-psycopg2-binary==2.9.7           # PostgreSQL adapter (use for production DB)
-django-environ==0.10.0           # 12-factor environment variable config
-python-dotenv==1.0.0             # .env file support for local development
-django-crispy-forms==1.14.0      # Better form rendering
-crispy-bootstrap5==0.7           # Bootstrap 5 template pack for crispy-forms
-django-storages==1.15.1          # Cloud storage backends (S3, etc.)
-
-
-# Development & testing tools
-django-debug-toolbar==3.8.1
-pytest==7.4.2
-pytest-django==4.5.2
-
-# Optional: useful utilities
-sqlalchemy==2.1.20               # Optional for complex DB tasks (if used)
-requests==2.31.0                 # HTTP client for external API calls
-
-Dev & testing
-- django-debug-toolbar==3.8.1
-- pytest==7.4.2
-- pytest-django==4.5.2
-- coverage==7.2.8
-
-Code quality
-- black==24.1.0
-- isort==5.12.0
-- flake8==6.1.0
-- mypy==1.10.0
-- pre-commit==4.6.0
-
-Optional / utilities
-- sqlalchemy==2.1.20
-- requests==2.31.0
-
-Recommended production/runtime extras (if using real-time features, payments, storage, PDFs)
-- daphne>=4.0.0
-- channels>=4.0.0
-- channels-redis>=4.0.0
-- stripe>=5.0.0
-- reportlab>=4.0.0
+Django==5.2.6
+channels==4.3.1
+channels-redis==4.3.0
+redis==6.4.0
+python-dotenv==1.1.1
+django-widget-tweaks==1.5.0
+Pillow==11.3.0
+stripe==13.0.0
+reportlab==4.4.4
+openai==2.3.0
 
 ## Environment variables (.env)
 Required keys (examples)
