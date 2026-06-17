@@ -19,5 +19,5 @@ pytest-django==4.5.2
 
 
 # Optional: useful utilities
-sqlalchemy==2.1.20               # Optional for complex DB tasks (if used)
-requests==2.31.0                 # HTTP client for external API calls
+sqlalchemy==2.0.3               # Optional for complex DB tasks (if used)
+requests==2.17.3                 # HTTP client for external API calls
