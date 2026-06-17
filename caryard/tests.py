@@ -919,7 +919,7 @@ class BookingSignalTest(TestCase):
         # Check notification was created for seller
         self.assertTrue(Notification.objects.filter(
             user=self.seller_user
-        ).exist())
+        ).exists())
 
 
 class MessageSignalTest(TestCase):

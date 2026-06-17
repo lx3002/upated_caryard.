@@ -1,4 +1,6 @@
-{% extends "base.html" %} {% load static %} {% block content %}
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
 <section class="cy-hero" style="--hero-image: url('{% static 'img/car/car-14.jpg' %}'); min-height: 340px;">
     <div class="cy-hero-content">
         <span class="cy-eyebrow"><i class="fa fa-filter"></i> Filtered inventory</span>
@@ -10,15 +12,26 @@
         </div>
     </div>
 </section>
-
 {% if query or make or min_price or max_price %}
 <section class="cy-panel mb-4">
     <div class="d-flex flex-wrap align-items-center gap-2">
-        <strong class="me-2">Active filters</strong> {% if query %}<span class="cy-chip"><i class="fa fa-tag"></i> "{{ query }}"</span>{% endif %} {% if make %}<span class="cy-chip"><i class="fa fa-car"></i> {{ make }}</span>{% endif %} {% if min_price
-        %}<span class="cy-chip"><i class="fa fa-arrow-up"></i> Min ${{ min_price }}</span>{% endif %} {% if max_price %}<span class="cy-chip"><i class="fa fa-arrow-down"></i> Max ${{ max_price }}</span>{% endif %}
+        <strong class="me-2">Active filters</strong>
+        {% if query %}
+        <span class="cy-chip"><i class="fa fa-tag"></i> "{{ query }}"</span>
+        {% endif %}
+        {% if make %}
+        <span class="cy-chip"><i class="fa fa-car"></i> {{ make }}</span>
+        {% endif %}
+        {% if min_price %}
+        <span class="cy-chip"><i class="fa fa-arrow-up"></i> Min ${{ min_price }}</span>
+        {% endif %}
+        {% if max_price %}
+        <span class="cy-chip"><i class="fa fa-arrow-down"></i> Max ${{ max_price }}</span>
+        {% endif %}
     </div>
 </section>
-{% endif %} {% if vehicles %}
+{% endif %}
+{% if vehicles %}
 <section>
     <div class="cy-section-heading">
         <div>
@@ -32,10 +45,14 @@
             <article class="cy-vehicle-card">
                 <div class="cy-card-media">
                     {% if vehicle.image %}
-                    <img src="{{ vehicle.image.url }}" alt="{{ vehicle.title }}"> {% else %}
-                    <img src="{% static 'img/car/car-14.jpg' %}" alt="Vehicle placeholder"> {% endif %}
-                    <span class="cy-price-tag">${{ vehicle.price|floatformat:2 }}</span> {% if vehicle.average_rating %}
-                    <span class="cy-rating-tag"><i class="fa fa-star"></i> {{ vehicle.average_rating|floatformat:1 }}</span> {% endif %}
+                    <img src="{{ vehicle.image.url }}" alt="{{ vehicle.title }}">
+                    {% else %}
+                    <img src="{% static 'img/car/car-14.jpg' %}" alt="Vehicle placeholder">
+                    {% endif %}
+                    <span class="cy-price-tag">${{ vehicle.price|floatformat:2 }}</span>
+                    {% if vehicle.average_rating %}
+                    <span class="cy-rating-tag"><i class="fa fa-star"></i> {{ vehicle.average_rating|floatformat:1 }}</span>
+                    {% endif %}
                 </div>
                 <div class="cy-card-body">
                     <h3 class="cy-card-title">{{ vehicle.title }}</h3>
@@ -64,4 +81,5 @@
         <a href="{% url 'home' %}" class="btn btn-outline-primary"><i class="fa fa-home"></i> Browse All Vehicles</a>
     </div>
 </section>
-{% endif %} {% endblock %}
+{% endif %}
+{% endblock %}

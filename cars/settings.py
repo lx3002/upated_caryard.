@@ -60,7 +60,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'caryard.apps.CaryardConfig',
+    'caryard',
     'widget_tweaks',
     
 ]

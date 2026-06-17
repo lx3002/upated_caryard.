@@ -46,7 +46,7 @@ class Vehicle(models.Model):
 
 class Staff(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    position = models.CharField(max_length=100, blank=True, null=True, default='staff')
+    position = models.CharField(max_length=100, blank=True, null=True, default='Staff')
     phone = models.CharField(max_length=20, blank=True, null=True)
     assigned_since = models.DateTimeField(default=timezone.now)
  
