@@ -61,7 +61,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'caryard',
-    'widget_tweaks',
+    
     
 ]
 
