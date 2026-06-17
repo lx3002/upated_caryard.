@@ -607,7 +607,8 @@ from django.http import JsonResponse
 import json
 from django.conf import settings
 
-client = OpenAI(api_key=settings.OPENAI_API_KEY)
+def get_openai_client():
+    return OpenAI(api_key=settings.OPENAI_API_KEY)
 
 def chatbot_response(request):
     if request.method == "POST":
