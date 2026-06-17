@@ -17,16 +17,9 @@ def create_user_profiles(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=User)
 def save_user_profiles(sender, instance, **kwargs):
-    """Save the profiles when the User is saved."""
-    try:
-        instance.seller.save()
-    except Seller.DoesNotExist:
-        pass
-
-    try:
-        instance.buyer.save()
-    except Buyer.DoesNotExist:
-        pass
+    """Ensure profiles exist without overwriting profile fields."""
+    Seller.objects.get_or_create(user=instance)
+    Buyer.objects.get_or_create(user=instance)
 
 
 

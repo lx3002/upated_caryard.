@@ -54,7 +54,7 @@ def validate_email_address(email: str) -> bool:
 
 #  Send invoice email
 def send_invoice_email(booking, payment):
-    """Send formatted HTML invoice with attached PDF."""
+    
     try:
         recipient = booking.buyer.user.email
 

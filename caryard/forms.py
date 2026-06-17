@@ -110,7 +110,7 @@ class PaymentForm(StyledFormMixin, forms.ModelForm):
 
 
 class MessageForm(forms.ModelForm):
-    class mete:
+    class Meta:
         model = Messages
         fields = ['content']
         widgets ={

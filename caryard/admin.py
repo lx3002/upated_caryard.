@@ -60,7 +60,7 @@ class PaymentAdmin(admin.ModelAdmin):
 @admin.register( ChatbotLog)
 class  ChatbotLogAdmin(admin.ModelAdmin):
     list_display = ("user", "user_message", "bot_reply", "created")
-    search_fields = ("user_message", "bot_reply", "user__name")
+    search_fields = ("user_message", "bot_reply", "user__username")
     list_filter = ("created",)
     
 @admin.register(Messages)
