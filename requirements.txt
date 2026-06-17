@@ -9,6 +9,7 @@ django-environ==0.10.0           # 12-factor environment variable config
 python-dotenv==1.0.0             # .env file support for local development
 django-crispy-forms==1.14.0      # Better form rendering
 crispy-bootstrap5==0.7           # Bootstrap 5 template pack for crispy-forms
+channels>=4.0
 
 
 
