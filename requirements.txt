@@ -1,10 +1,24 @@
-Django==5.2.6
-channels==4.3.1
-channels-redis==4.3.0
-redis==6.4.0
-python-dotenv==1.1.1
-django-widget-tweaks==1.5.0
-Pillow==11.3.0
-stripe==13.0.0
-reportlab==4.4.4
-openai==2.3.0
+# requirements.txt for Caryard Django project
+# Pinned versions for reproducibility. Update as needed.
+
+Django==4.2.7
+gunicorn==21.2.0                 # Production WSGI server
+Pillow==10.0.0                   # Image processing (for <ImageField>)
+psycopg2-binary>=2.9.9         # PostgreSQL adapter (use for production DB)
+django-environ==0.10.0           # 12-factor environment variable config
+python-dotenv==1.0.0             # .env file support for local development
+django-crispy-forms==1.14.0      # Better form rendering
+crispy-bootstrap5==0.7           # Bootstrap 5 template pack for crispy-forms
+channels>=4.0
+
+
+
+# Development & testing tools
+pytest==7.4.2
+pytest-django==4.5.2
+
+
+
+# Optional: useful utilities
+sqlalchemy==2.0.3               # Optional for complex DB tasks (if used)
+requests==2.17.3                 # HTTP client for external API calls
