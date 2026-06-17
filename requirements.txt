@@ -4,7 +4,7 @@
 Django==4.2.7
 gunicorn==21.2.0                 # Production WSGI server
 Pillow==10.0.0                   # Image processing (for <ImageField>)
-psycopg2-binary==2.9.7           # PostgreSQL adapter (use for production DB)
+psycopg2-binary>=2.9.9         # PostgreSQL adapter (use for production DB)
 django-environ==0.10.0           # 12-factor environment variable config
 python-dotenv==1.0.0             # .env file support for local development
 django-crispy-forms==1.14.0      # Better form rendering
