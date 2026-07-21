@@ -103,9 +103,3 @@ Email is currently hardcoded in `cars/settings.py` - consider moving to `.env`.
 - Consumer: `caryard/consumers.py`
 - Creates room names alphabetically sorted to ensure both users join same room
 
-### Booking Flow
-1. Vehicle bookings → Stripe checkout → payment_success view → Payment record + email invoice
-2. Tour bookings → Direct confirmation email, no payment required
-
-### Admin Panel
-Access at `/admin/` - models registered in `caryard/admin.py` with custom list displays and filters.
