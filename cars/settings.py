@@ -20,8 +20,8 @@ EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = "scottemma737@gmail.com"
-EMAIL_HOST_PASSWORD = "hhat blzq gcmg nttj"
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
@@ -33,6 +33,14 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY" )
 STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+
+MPESA_ENVIRONMENT = os.getenv("MPESA_ENVIRONMENT", "sandbox")
+MPESA_CONSUMER_KEY = os.getenv("MPESA_CONSUMER_KEY", "")
+MPESA_CONSUMER_SECRET = os.getenv("MPESA_CONSUMER_SECRET", "")
+MPESA_SHORTCODE = os.getenv("MPESA_SHORTCODE", "174379")
+MPESA_PASSKEY = os.getenv("MPESA_PASSKEY", "")
+MPESA_CALLBACK_URL = os.getenv("MPESA_CALLBACK_URL", "")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -42,12 +50,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-mubp&8)$q(n+85lipkra(24*cioq*-2jt#n%0)m&03_23*mfm='
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-change-me-for-production")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() in {"1", "true", "yes"}
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [host.strip() for host in os.getenv(
+    "DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost"
+).split(",") if host.strip()]
+
+SITE_URL = os.getenv("SITE_URL", "http://127.0.0.1:8000").rstrip("/")
 
 
 # Application definition
@@ -61,7 +73,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'caryard.apps.CaryardConfig',
-    'widget_tweaks',
     
 ]
 
@@ -98,12 +109,20 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [('127.0.0.1', 6379)],
+            'hosts': [os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')],
         },
     },
 }
-CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
-CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
+CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+
+if os.getenv("REDIS_URL"):
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": os.getenv("REDIS_URL"),
+        }
+    }
 
 
 
@@ -113,7 +132,7 @@ CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': os.getenv('DB_PATH') or BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -147,6 +166,13 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
+# Vercel terminates TLS at its proxy and forwards the original protocol.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = not DEBUG
+SECURE_HSTS_SECONDS = int(os.getenv("DJANGO_SECURE_HSTS_SECONDS", "3600")) if not DEBUG else 0
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 
 # Static files (CSS, JavaScript, Images)

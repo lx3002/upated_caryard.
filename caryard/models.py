@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.core.validators import MaxValueValidator, MinValueValidator
+import uuid
 
 
 
@@ -23,6 +25,25 @@ class Buyer(models.Model):
         return self.user.username
 
 
+class EmailLoginCode(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="email_login_codes")
+    code_hash = models.CharField(max_length=128)
+    expires_at = models.DateTimeField()
+    attempts = models.PositiveSmallIntegerField(default=0)
+    used = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created",)
+
+    @property
+    def is_expired(self):
+        return timezone.now() >= self.expires_at
+
+    def __str__(self):
+        return f"Login code for {self.user.username}"
+
+
 
 class Vehicle(models.Model):
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name="vehicles")
@@ -30,6 +51,13 @@ class Vehicle(models.Model):
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2, null = True)
     image = models.ImageField(upload_to="vehicles/")
+    front_image = models.ImageField(upload_to="vehicles/", blank=True, null=True)
+    side_image = models.ImageField(upload_to="vehicles/", blank=True, null=True)
+    interior_image = models.ImageField(upload_to="vehicles/", blank=True, null=True)
+    rear_image = models.ImageField(upload_to="vehicles/", blank=True, null=True)
+    quantity = models.PositiveIntegerField(default=1)
+    is_available_for_rent = models.BooleanField(default=False)
+    daily_rental_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     created = models.DateTimeField(default=timezone.now)
   
 
@@ -38,6 +66,21 @@ class Vehicle(models.Model):
         if ratings.exists():
             return sum(r.score for r in ratings) / ratings.count()
         return 0
+
+    @property
+    def reserved_quantity(self):
+        return self.booking_set.filter(
+            booking_type__in=("VEHICLE", "RENTAL"),
+            status__in=("PENDING", "CONFIRMED"),
+        ).count()
+
+    @property
+    def available_quantity(self):
+        return max(0, self.quantity - self.reserved_quantity)
+
+    @property
+    def is_in_stock(self):
+        return self.available_quantity > 0
 
     def __str__(self):
         return self.title
@@ -51,7 +94,7 @@ class Staff(models.Model):
     assigned_since = models.DateTimeField(default=timezone.now)
  
     def __str__(self):
-        return f"{self.user.username} ({self.position or 'Staff'})"
+        return f"{self.user.username} ({(self.position or 'Staff').title()})"
 
 
 class Booking(models.Model):
@@ -63,6 +106,7 @@ class Booking(models.Model):
     
     BOOKING_TYPE_CHOICES = (
         ('VEHICLE', 'Vehicle Purchase'),
+        ('RENTAL', 'Vehicle Rental'),
         ('TOUR', 'Car Yard Tour'),
     )
 
@@ -73,6 +117,9 @@ class Booking(models.Model):
     staff = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, blank=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
     tour_date = models.DateTimeField(null=True, blank=True, help_text="Preferred date for car yard tour")
+    rental_start = models.DateField(null=True, blank=True)
+    rental_end = models.DateField(null=True, blank=True)
+    stripe_session_id = models.CharField(max_length=255, blank=True, null=True, unique=True)
     notes = models.TextField(blank=True, help_text="Additional notes for the booking")
 
     def __str__(self):
@@ -95,7 +142,19 @@ class Comment(models.Model):
 class Rating(models.Model):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    score = models.IntegerField(default=0)
+    score = models.IntegerField(
+        default=0, validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    service_score = models.IntegerField(
+        default=0, validators=[MinValueValidator(0), MaxValueValidator(5)]
+    )
+    review = models.TextField(blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=("vehicle", "user"), name="unique_vehicle_rating")
+        ]
 
     def __str__(self):
         return f"{self.score} by {self.user.username} on {self.vehicle.title}"
@@ -113,6 +172,11 @@ class Payment(models.Model):
     buyer = models.ForeignKey(Buyer, on_delete=models.CASCADE)
     method = models.CharField(max_length=20, choices=METHOD_CHOICES)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, default="PENDING")
+    transaction_reference = models.CharField(max_length=100, blank=True)
+    provider_request_id = models.CharField(max_length=100, blank=True, db_index=True)
+    phone_number = models.CharField(max_length=20, blank=True)
+    idempotency_key = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     created = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
@@ -152,7 +216,7 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['-created_at', '-id']
 
     def __str__(self):
         return f"Notification for {self.user.username}"

@@ -34,6 +34,32 @@
         <span class="cy-stat-value">{{ tour_count }}</span>
         <span class="cy-stat-label">Yard tours</span>
     </div>
+    <div class="cy-stat-card">
+        <span class="cy-stat-icon"><i class="fa fa-key"></i></span>
+        <span class="cy-stat-value">{{ rental_count }}</span>
+        <span class="cy-stat-label">Rentals</span>
+    </div>
+    <div class="cy-stat-card">
+        <span class="cy-stat-icon"><i class="fa fa-wallet"></i></span>
+        <span class="cy-stat-value">KES {{ sales_revenue|floatformat:0 }}</span>
+        <span class="cy-stat-label">Sales revenue</span>
+    </div>
+    <div class="cy-stat-card">
+        <span class="cy-stat-icon"><i class="fa fa-star"></i></span>
+        <span class="cy-stat-value">{{ average_service_rating|floatformat:1 }}</span>
+        <span class="cy-stat-label">Service rating</span>
+    </div>
+</section>
+
+<section class="row g-4 mb-4">
+    <div class="col-lg-5"><div class="cy-panel h-100"><h2 class="h4 fw-bold">Booking mix</h2><canvas id="bookingChart" height="220"></canvas></div></div>
+    <div class="col-lg-7">
+        <div class="cy-panel h-100"><div class="cy-toolbar"><div><h2 class="h4 fw-bold mb-1">Inventory manager</h2><p class="cy-muted mb-0">Live stock after active bookings.</p></div><a class="btn btn-primary" href="{% url 'add_vehicle' %}"><i class="fa fa-plus"></i> Add stock</a></div>
+        <div class="cy-table-wrap"><table class="table cy-table"><thead><tr><th>Vehicle</th><th>Available</th><th>Rental</th><th>Status</th></tr></thead><tbody>
+        {% for vehicle in inventory %}<tr><td><a href="{% url 'vehicle_detail' vehicle.id %}">{{ vehicle.title }}</a><small class="d-block cy-muted">{{ vehicle.seller.user.username }}</small></td><td><strong>{{ vehicle.available_quantity }}</strong> / {{ vehicle.quantity }}</td><td>{% if vehicle.is_available_for_rent %}KES {{ vehicle.daily_rental_price|floatformat:0 }}/day{% else %}—{% endif %}</td><td><span class="cy-status {% if vehicle.is_in_stock %}cy-status-confirmed{% else %}cy-status-cancelled{% endif %}">{% if vehicle.is_in_stock %}In stock{% else %}Booked out{% endif %}</span></td></tr>
+        {% empty %}<tr><td colspan="4">No inventory yet.</td></tr>{% endfor %}
+        </tbody></table></div></div>
+    </div>
 </section>
 
 <section class="cy-panel">
@@ -120,4 +146,11 @@
     </div>
     {% endif %}
 </section>
+{% endblock %}
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+const dashboardData = {{ chart_data|safe }};
+new Chart(document.getElementById('bookingChart'), {type:'doughnut', data:{labels:dashboardData.labels,datasets:[{data:dashboardData.values,backgroundColor:['#2563eb','#06b6d4','#f59e0b','#ef4444'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{position:'bottom'}}}});
+</script>
 {% endblock %}

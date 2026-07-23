@@ -1,13 +1,15 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, logout
+from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.core.mail import EmailMessage, BadHeaderError
 from django.template.loader import render_to_string
-from django.db.models import Avg, Max, Min, Q
+from django.db.models import Avg, Max, Min, Q, Count, Sum
+from django.db import transaction
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.admin.views.decorators import staff_member_required
 
@@ -16,17 +18,25 @@ import re
 import json
 import stripe
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 import io
+import base64
+import secrets
+import uuid
+import urllib.request
+import urllib.error
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from django.utils.timezone import localtime, make_aware
-from datetime import datetime
+from datetime import datetime, timedelta
+from decimal import Decimal, InvalidOperation
 from openai import OpenAI
 from django.http import JsonResponse
 import json
 from django.conf import settings
-from .models import Vehicle, Seller, Buyer, Booking, Comment, Rating, Payment, ChatbotLog, Messages, Notification, Staff,ChatMessage
+from .models import Vehicle, Seller, Buyer, Booking, Comment, Rating, Payment, ChatbotLog, Messages, Notification, Staff, ChatMessage, EmailLoginCode
 from .forms import BookingForm, CommentForm, SignupForm, VehicleForm, PaymentForm, MessageForm
+from .security import rate_limit
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
@@ -226,7 +236,7 @@ def send_tour_booking_email(booking):
 def home(request):
     vehicles = Vehicle.objects.select_related('seller__user').all().order_by('-created')
     stats = {
-        "vehicle_count": vehicles.count(),
+        "vehicle_count": sum(vehicle.available_quantity for vehicle in vehicles),
         "seller_count": Seller.objects.count(),
         "booking_count": Booking.objects.count(),
         "comment_count": Comment.objects.count(),
@@ -251,6 +261,12 @@ def vehicle_detail(request, pk):
         "vehicle": vehicle,
         "booking_form": booking_form,
         "related_vehicles": related_vehicles,
+        "can_rate": request.user.is_authenticated and Booking.objects.filter(
+            buyer__user=request.user, vehicle=vehicle, booking_type="VEHICLE",
+            status="CONFIRMED", payment__status="COMPLETED",
+        ).exists(),
+        "user_rating": Rating.objects.filter(vehicle=vehicle, user=request.user).first()
+        if request.user.is_authenticated else None,
     }
     return render(request, "vehicle_detail.html", context)
 
@@ -272,6 +288,7 @@ def add_vehicle(request):
 
 
 # BOOKING 
+@rate_limit(10, 60, scope="booking-create", methods={"POST"})
 @login_required
 def book_vehicle(request, pk):
     vehicle = get_object_or_404(Vehicle, pk=pk)
@@ -294,21 +311,33 @@ def book_vehicle(request, pk):
             except (ValueError, TypeError):
                 tour_date = None
         
-        # Create booking
-        booking = Booking.objects.create(
-            booking_type=booking_type,
-            vehicle=vehicle if booking_type == 'VEHICLE' else None,
-            buyer=buyer,
-            tour_date=tour_date,
-            notes=notes
-        )
+        if booking_type in ("VEHICLE", "RENTAL") and not vehicle.is_in_stock:
+            messages.error(request, "This vehicle is currently booked out.")
+            return redirect("vehicle_detail", pk=pk)
+        if booking_type == "RENTAL" and not vehicle.is_available_for_rent:
+            messages.error(request, "This vehicle is not available for rent.")
+            return redirect("vehicle_detail", pk=pk)
 
-        if booking_type == 'VEHICLE':
-            # For vehicle purchase, redirect to Stripe payment
-            checkout_session = create_stripe_checkout_session(request, booking)
-            booking.stripe_session_id = checkout_session.id
-            booking.save()
-            return redirect(checkout_session.url, code=303)
+        rental_start = request.POST.get("rental_start") or None
+        rental_end = request.POST.get("rental_end") or None
+        if booking_type == "RENTAL" and (not rental_start or not rental_end or rental_end < rental_start):
+            messages.error(request, "Choose a valid rental date range.")
+            return redirect("vehicle_detail", pk=pk)
+
+        with transaction.atomic():
+            locked_vehicle = Vehicle.objects.select_for_update().get(pk=vehicle.pk)
+            if booking_type in ("VEHICLE", "RENTAL") and not locked_vehicle.is_in_stock:
+                messages.error(request, "That vehicle was just booked. Please choose another.")
+                return redirect("vehicle_detail", pk=pk)
+            booking = Booking.objects.create(
+                booking_type=booking_type,
+                vehicle=locked_vehicle if booking_type in ("VEHICLE", "RENTAL") else None,
+                buyer=buyer, tour_date=tour_date, notes=notes,
+                rental_start=rental_start, rental_end=rental_end,
+            )
+
+        if booking_type in ('VEHICLE', 'RENTAL'):
+            return redirect("payment", booking_id=booking.id)
         else:
             # For tour booking, send confirmation email and redirect
             send_tour_booking_email(booking)
@@ -329,13 +358,18 @@ def create_stripe_checkout_session(request, booking):
             "price_data": {
                 "currency": "usd",
                 "product_data": {"name": booking.vehicle.title},
-                "unit_amount": int(min(booking.vehicle.price, 999999.99) * 100),
+                "unit_amount": int(min(
+                    booking.vehicle.daily_rental_price if booking.booking_type == "RENTAL"
+                    else booking.vehicle.price, Decimal("999999.99")
+                ) * 100),
             },
             "quantity": 1,
         }],
         mode="payment",
         success_url=request.build_absolute_uri(reverse("payment_success", args=[booking.id])),
         cancel_url=request.build_absolute_uri(reverse("payment_cancel", args=[booking.id])),
+        metadata={"booking_id": str(booking.id)},
+        idempotency_key=f"caryard-booking-{booking.id}-stripe-v1",
     )
     return session
 
@@ -345,27 +379,133 @@ def create_stripe_checkout_session(request, booking):
 def payment_view(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id, buyer__user=request.user)
 
-    if request.method == 'POST':
-        form = PaymentForm(request.POST)
-        if form.is_valid():
-            payment = form.save(commit=False)
-            payment.booking = booking
-            payment.buyer = booking.buyer
-            payment.amount = booking.vehicle.price
-            payment.save()
+    amount = booking.vehicle.daily_rental_price if booking.booking_type == "RENTAL" else booking.vehicle.price
+    return render(request, 'payment.html', {'booking': booking, 'amount': amount})
 
-            email_sent, email_message = send_invoice_email(booking, payment)
 
-            if email_sent:
-                messages.success(request, f"Payment successful! {email_message}")
-            else:
-                messages.error(request, f"Payment successful, but {email_message}")
+@rate_limit(6, 60, scope="stripe-checkout")
+@login_required
+def stripe_checkout(request, booking_id):
+    with transaction.atomic():
+        booking = get_object_or_404(
+            Booking.objects.select_for_update(), id=booking_id, buyer__user=request.user
+        )
+        if Payment.objects.filter(booking=booking, status="COMPLETED").exists():
+            messages.info(request, "This booking is already paid.")
+            return redirect("my_bookings")
+        try:
+            checkout_session = create_stripe_checkout_session(request, booking)
+        except Exception:
+            messages.error(request, "Stripe checkout could not start. Check the payment configuration.")
+            return redirect("payment", booking_id=booking.id)
+        booking.stripe_session_id = checkout_session.id
+        booking.save(update_fields=["stripe_session_id"])
+    return redirect(checkout_session.url, code=303)
 
-            return redirect('home')
-    else:
-        form = PaymentForm()
 
-    return render(request, 'payment.html', {'form': form, 'booking': booking})
+def _mpesa_base_url():
+    return "https://sandbox.safaricom.co.ke" if settings.MPESA_ENVIRONMENT == "sandbox" else "https://api.safaricom.co.ke"
+
+
+def _json_request(url, data=None, headers=None):
+    payload = json.dumps(data).encode() if data is not None else None
+    request = urllib.request.Request(url, data=payload, headers=headers or {}, method="POST" if data is not None else "GET")
+    with urllib.request.urlopen(request, timeout=20) as response:
+        return json.loads(response.read().decode())
+
+
+@rate_limit(3, 300, scope="mpesa-stk", methods={"POST"})
+@login_required
+def mpesa_payment(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id, buyer__user=request.user)
+    if request.method != "POST":
+        return redirect("payment", booking_id=booking.id)
+    phone = re.sub(r"\D", "", request.POST.get("phone", ""))
+    if phone.startswith("0"):
+        phone = "254" + phone[1:]
+    if not re.fullmatch(r"254[17]\d{8}", phone):
+        messages.error(request, "Enter a valid Kenyan Safaricom number.")
+        return redirect("payment", booking_id=booking.id)
+    required = (settings.MPESA_CONSUMER_KEY, settings.MPESA_CONSUMER_SECRET, settings.MPESA_PASSKEY, settings.MPESA_CALLBACK_URL)
+    if not all(required):
+        messages.error(request, "M-Pesa is not configured yet. Add the Daraja credentials to the environment.")
+        return redirect("payment", booking_id=booking.id)
+    amount = booking.vehicle.daily_rental_price if booking.booking_type == "RENTAL" else booking.vehicle.price
+    with transaction.atomic():
+        locked_booking = Booking.objects.select_for_update().get(pk=booking.pk)
+        payment, created = Payment.objects.select_for_update().get_or_create(
+            booking=locked_booking,
+            defaults={
+                "buyer": booking.buyer, "method": "MPESA", "amount": amount,
+                "phone_number": phone, "status": "PENDING",
+            },
+        )
+        if not created and payment.status == "COMPLETED":
+            messages.info(request, "This booking has already been paid.")
+            return redirect("my_bookings")
+        if not created and payment.status == "PENDING" and payment.provider_request_id:
+            messages.info(request, "An M-Pesa prompt is already pending for this booking.")
+            return redirect("my_bookings")
+        if not created:
+            payment.method = "MPESA"
+            payment.amount = amount
+            payment.phone_number = phone
+            payment.status = "PENDING"
+            payment.provider_request_id = ""
+            payment.idempotency_key = uuid.uuid4()
+            payment.save(update_fields=[
+                "method", "amount", "phone_number", "status",
+                "provider_request_id", "idempotency_key",
+            ])
+    try:
+        credentials = base64.b64encode(f"{settings.MPESA_CONSUMER_KEY}:{settings.MPESA_CONSUMER_SECRET}".encode()).decode()
+        token = _json_request(f"{_mpesa_base_url()}/oauth/v1/generate?grant_type=client_credentials", headers={"Authorization": f"Basic {credentials}"})["access_token"]
+        timestamp = timezone.now().strftime("%Y%m%d%H%M%S")
+        password = base64.b64encode(f"{settings.MPESA_SHORTCODE}{settings.MPESA_PASSKEY}{timestamp}".encode()).decode()
+        response = _json_request(
+            f"{_mpesa_base_url()}/mpesa/stkpush/v1/processrequest",
+            {
+                "BusinessShortCode": settings.MPESA_SHORTCODE, "Password": password,
+                "Timestamp": timestamp, "TransactionType": "CustomerPayBillOnline",
+                "Amount": int(amount), "PartyA": phone, "PartyB": settings.MPESA_SHORTCODE,
+                "PhoneNumber": phone, "CallBackURL": settings.MPESA_CALLBACK_URL,
+                "AccountReference": f"CARYARD-{booking.id}", "TransactionDesc": "Car Yard booking",
+            },
+            {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+                "X-Idempotency-Key": str(payment.idempotency_key),
+            },
+        )
+        payment.provider_request_id = response.get("CheckoutRequestID", "")
+        payment.save(update_fields=["provider_request_id"])
+        messages.success(request, "M-Pesa prompt sent. Complete it on your phone.")
+    except (KeyError, urllib.error.URLError, ValueError):
+        messages.error(request, "M-Pesa could not start. Please try again or use Stripe.")
+    return redirect("my_bookings")
+
+
+@rate_limit(120, 60, scope="mpesa-callback", methods={"POST"})
+@csrf_exempt
+def mpesa_callback(request):
+    if request.method != "POST":
+        return JsonResponse({"ok": False}, status=405)
+    try:
+        callback = json.loads(request.body)["Body"]["stkCallback"]
+        payment = Payment.objects.get(provider_request_id=callback["CheckoutRequestID"])
+        if callback["ResultCode"] == 0:
+            items = callback.get("CallbackMetadata", {}).get("Item", [])
+            metadata = {item["Name"]: item.get("Value") for item in items}
+            payment.status = "COMPLETED"
+            payment.transaction_reference = str(metadata.get("MpesaReceiptNumber", payment.transaction_reference))
+            payment.booking.status = "CONFIRMED"
+            payment.booking.save(update_fields=["status"])
+        else:
+            payment.status = "FAILED"
+        payment.save(update_fields=["status", "transaction_reference"])
+    except (KeyError, ValueError, Payment.DoesNotExist):
+        return JsonResponse({"ok": False}, status=400)
+    return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
 
 
 @login_required
@@ -374,12 +514,14 @@ def payment_success(request, booking_id):
 
     # Only create payment for vehicle purchases
     if booking.booking_type == 'VEHICLE' and booking.vehicle:
-        payment = Payment.objects.create(
+        amount = booking.vehicle.daily_rental_price if booking.booking_type == "RENTAL" else booking.vehicle.price
+        payment, _ = Payment.objects.update_or_create(
             booking=booking,
-            buyer=booking.buyer,
-            amount=booking.vehicle.price,
-            method="Stripe"
+            defaults={"buyer": booking.buyer, "amount": amount,
+                      "method": "CARD", "status": "COMPLETED"}
         )
+        booking.status = "CONFIRMED"
+        booking.save(update_fields=["status"])
 
         email_sent, email_message = send_invoice_email(booking, payment)
 
@@ -396,11 +538,14 @@ def payment_success(request, booking_id):
 @login_required
 def payment_cancel(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id, buyer__user=request.user)
+    booking.status = "CANCELLED"
+    booking.save(update_fields=["status"])
     messages.warning(request, "Payment was cancelled. You can try again.")
     return redirect("vehicle_detail", pk=booking.vehicle.id)
 
 
 # ---------------- COMMENTS ----------------
+@rate_limit(20, 60, scope="comments", methods={"POST"})
 @login_required
 def ajax_comment(request):
     if request.method == 'POST':
@@ -418,26 +563,40 @@ def ajax_comment(request):
 
 
 
+@rate_limit(10, 60, scope="ratings", methods={"POST"})
 @login_required
 def ajax_rate(request):
     if request.method == 'POST':
         vehicle_id = request.POST.get('vehicle_id')
-        score = int(request.POST.get('score', 0))
+        try:
+            score = int(request.POST.get('score', 0))
+            service_score = int(request.POST.get('service_score', 0))
+        except (TypeError, ValueError):
+            return JsonResponse({'ok': False, 'error': 'Invalid rating.'}, status=400)
+        if score not in range(1, 6) or service_score not in range(1, 6):
+            return JsonResponse({'ok': False, 'error': 'Ratings must be between 1 and 5.'}, status=400)
         vehicle = get_object_or_404(Vehicle, pk=vehicle_id)
+        if not Booking.objects.filter(
+            buyer__user=request.user, vehicle=vehicle, booking_type="VEHICLE",
+            status="CONFIRMED", payment__status="COMPLETED",
+        ).exists():
+            return JsonResponse({'ok': False, 'error': 'Only verified buyers can rate this vehicle.'}, status=403)
         Rating.objects.update_or_create(
             vehicle=vehicle,
             user=request.user,
-            defaults={'score': score}
+            defaults={'score': score, 'service_score': service_score,
+                      'review': request.POST.get('review', '').strip()}
         )
         return JsonResponse({'ok': True, 'average': vehicle.average_rating()})
     return JsonResponse({'ok': False}, status=400)
 
 
+@rate_limit(120, 60, scope="stripe-webhook", methods={"POST"})
 @csrf_exempt
 def stripe_webhook(request):
     payload = request.body
     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
-    endpoint_secret = "whsec_xxxxxxxxxxxxxx"  # Replace with your real secret
+    endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
     event = None
 
     try:
@@ -450,12 +609,17 @@ def stripe_webhook(request):
 
         try:
             booking = Booking.objects.get(stripe_session_id=session["id"])
-            payment = Payment.objects.create(
+            payment, _ = Payment.objects.update_or_create(
                 booking=booking,
-                buyer=booking.buyer,
-                amount=booking.vehicle.price,
-                method="Stripe"
+                defaults={
+                    "buyer": booking.buyer,
+                    "amount": booking.vehicle.daily_rental_price if booking.booking_type == "RENTAL" else booking.vehicle.price,
+                    "method": "CARD",
+                    "status": "COMPLETED",
+                },
             )
+            booking.status = "CONFIRMED"
+            booking.save(update_fields=["status"])
             send_invoice_email(booking, payment)
         except Booking.DoesNotExist:
             pass
@@ -474,9 +638,11 @@ def signup_view(request):
                 user.save()
                 Buyer.objects.get_or_create(user=user)
                 Seller.objects.get_or_create(user=user)
-                login(request, user)
-                messages.success(request, "Account created successfully! Welcome to Car Yard!")
-                return redirect('home')
+                if _issue_login_code(request, user, reverse("home")):
+                    messages.success(request, "Account created. Check your email to verify your first login.")
+                    return redirect("verify_login_code")
+                messages.warning(request, "Your account was created, but the verification email could not be sent. Please log in to try again.")
+                return redirect("login")
             except Exception as e:
                 messages.error(request, f"Error creating account: {str(e)}")
         else:
@@ -488,17 +654,124 @@ def signup_view(request):
     return render(request, 'signup.html', {'form': form})
 
 
+@rate_limit(10, 60, scope="login", methods={"POST"})
 def login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
-            login(request, user)
-            next_url = request.GET.get('next', 'home')
-            return redirect(next_url)
+            if not user.email:
+                messages.error(request, "Your account needs an email address before email verification can be used.")
+                return render(request, 'login.html', {'form': form})
+            next_url = request.GET.get('next', reverse('home'))
+            if not url_has_allowed_host_and_scheme(next_url, {request.get_host()}, request.is_secure()):
+                next_url = reverse('home')
+            # A previous session must never bypass the email challenge.
+            if request.user.is_authenticated:
+                logout(request)
+            if _issue_login_code(request, user, next_url):
+                return redirect("verify_login_code")
     else:
         form = AuthenticationForm()
     return render(request, 'login.html', {'form': form})
+
+
+def _masked_email(email):
+    local, domain = email.split("@", 1)
+    visible = local[:2] if len(local) > 2 else local[:1]
+    return f"{visible}{'*' * max(2, len(local) - len(visible))}@{domain}"
+
+
+def _issue_login_code(request, user, next_url=None):
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    challenge = EmailLoginCode.objects.create(
+        user=user,
+        code_hash=make_password(code),
+        expires_at=timezone.now() + timedelta(minutes=10),
+    )
+    try:
+        send_mail(
+            "Your Car Yard login code",
+            (
+                f"Hello {user.username},\n\n"
+                f"Your Car Yard verification code is: {code}\n\n"
+                "It expires in 10 minutes. If you did not try to log in, you can ignore this email."
+            ),
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
+    except Exception:
+        challenge.delete()
+        messages.error(request, "We could not send the verification email. Please try again shortly.")
+        return False
+    request.session["pending_login_code_id"] = challenge.id
+    request.session["pending_login_next"] = next_url or reverse("home")
+    request.session["login_code_sent_at"] = timezone.now().timestamp()
+    request.session.cycle_key()
+    return True
+
+
+@rate_limit(10, 300, scope="login-code", methods={"POST"})
+def verify_login_code(request):
+    challenge_id = request.session.get("pending_login_code_id")
+    challenge = EmailLoginCode.objects.select_related("user").filter(
+        id=challenge_id, used=False
+    ).first()
+    if not challenge:
+        messages.info(request, "Start a new login to receive a verification code.")
+        return redirect("login")
+
+    if challenge.is_expired:
+        challenge.used = True
+        challenge.save(update_fields=["used"])
+        messages.error(request, "That verification code expired. Please log in again.")
+        return redirect("login")
+
+    if request.method == "POST":
+        code = re.sub(r"\D", "", request.POST.get("code", ""))
+        if challenge.attempts >= 5:
+            challenge.used = True
+            challenge.save(update_fields=["used"])
+            messages.error(request, "Too many incorrect attempts. Please log in again.")
+            return redirect("login")
+        if len(code) == 6 and check_password(code, challenge.code_hash):
+            challenge.used = True
+            challenge.save(update_fields=["used"])
+            login(request, challenge.user, backend="django.contrib.auth.backends.ModelBackend")
+            next_url = request.session.pop("pending_login_next", reverse("home"))
+            request.session.pop("pending_login_code_id", None)
+            request.session.pop("login_code_sent_at", None)
+            messages.success(request, "Email verified. Welcome back!")
+            return redirect(next_url)
+        challenge.attempts += 1
+        challenge.save(update_fields=["attempts"])
+        messages.error(request, f"Incorrect code. {max(0, 5 - challenge.attempts)} attempt(s) remaining.")
+
+    return render(request, "verify_login_code.html", {
+        "masked_email": _masked_email(challenge.user.email),
+        "expires_at": challenge.expires_at,
+    })
+
+
+@rate_limit(5, 600, scope="login-code-resend", methods={"POST"})
+def resend_login_code(request):
+    if request.method != "POST":
+        return redirect("verify_login_code")
+    challenge = EmailLoginCode.objects.select_related("user").filter(
+        id=request.session.get("pending_login_code_id"), used=False
+    ).first()
+    if not challenge:
+        return redirect("login")
+    last_sent = request.session.get("login_code_sent_at", 0)
+    if timezone.now().timestamp() - last_sent < 60:
+        messages.warning(request, "Please wait one minute before requesting another code.")
+        return redirect("verify_login_code")
+    challenge.used = True
+    challenge.save(update_fields=["used"])
+    if _issue_login_code(request, challenge.user, request.session.get("pending_login_next")):
+        messages.success(request, "A new verification code was sent.")
+    return redirect("verify_login_code")
 
 
 @login_required
@@ -521,8 +794,8 @@ def staff_signup(request):
         if User.objects.filter(email=email).exists() and email:
             messages.error(request, "Email already registered.")
             return redirect("staff_signup")
-        if User.objects.filter(phone=phone).exists() and phone:
-            messages.error(request, "try anonther phone number please ")
+        if phone and Staff.objects.filter(phone=phone).exists():
+            messages.error(request, "That phone number is already registered.")
             return redirect("staff_signup")
 
         # Create user with staff privileges
@@ -530,7 +803,6 @@ def staff_signup(request):
             username=username, 
             password=password,
             email=email if email else f"{username}@caryard.com",
-            phone=phone if phone else "N/A"
         )
         user.is_staff = True  # Allow access to staff dashboard
         user.save()
@@ -571,14 +843,14 @@ def search(request):
     # Filter by price range
     if min_price:
         try:
-            vehicles = vehicles.filter(price__gte=float(min_price))
-        except (ValueError, TypeError):
+            vehicles = vehicles.filter(price__gte=Decimal(min_price))
+        except (InvalidOperation, TypeError):
             pass
 
     if max_price:
         try:
-            vehicles = vehicles.filter(price__lte=float(max_price))
-        except (ValueError, TypeError):
+            vehicles = vehicles.filter(price__lte=Decimal(max_price))
+        except (InvalidOperation, TypeError):
             pass
 
     # Determine which template to use
@@ -607,6 +879,7 @@ from django.conf import settings
 
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
+@rate_limit(20, 60, scope="chatbot", methods={"POST"})
 def chatbot_response(request):
     if request.method == "POST":
         data = json.loads(request.body)
@@ -838,6 +1111,16 @@ def staff_dashboard(request):
     cancelled_count = bookings.filter(status='CANCELLED').count()
     tour_count = bookings.filter(booking_type='TOUR').count()
     vehicle_booking_count = bookings.filter(booking_type='VEHICLE').count()
+    rental_count = bookings.filter(booking_type='RENTAL').count()
+    completed_payments = Payment.objects.filter(booking__in=bookings, status="COMPLETED")
+    sales_revenue = completed_payments.filter(booking__booking_type="VEHICLE").aggregate(total=Sum("amount"))["total"] or Decimal("0")
+    rental_revenue = completed_payments.filter(booking__booking_type="RENTAL").aggregate(total=Sum("amount"))["total"] or Decimal("0")
+    inventory = Vehicle.objects.select_related("seller__user").order_by("title")
+    average_service_rating = Rating.objects.filter(service_score__gt=0).aggregate(avg=Avg("service_score"))["avg"] or 0
+    chart_data = json.dumps({
+        "labels": ["Sales", "Tours", "Rentals", "Cancelled"],
+        "values": [vehicle_booking_count, tour_count, rental_count, cancelled_count],
+    })
 
     return render(request, "staff_dashboard.html", {
         "staff": staff, 
@@ -848,6 +1131,12 @@ def staff_dashboard(request):
         "cancelled_count": cancelled_count,
         "tour_count": tour_count,
         "vehicle_booking_count": vehicle_booking_count,
+        "rental_count": rental_count,
+        "sales_revenue": sales_revenue,
+        "rental_revenue": rental_revenue,
+        "inventory": inventory,
+        "average_service_rating": average_service_rating,
+        "chart_data": chart_data,
     })
 
 

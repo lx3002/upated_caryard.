@@ -1,11 +1,30 @@
-{% extends "base.html" %} {% block content %}
-<div class="container mt-4 text-center">
-    <h2>💳 Complete Your Payment</h2>
-    <p>Booking for: <strong>{{ booking.vehicle.title }}</strong></p>
-    <p>Amount: <strong>${{ booking.vehicle.price }}</strong></p>
-
-    <a href="{% url 'checkout' booking.id %}" class="btn btn-success btn-lg">
-        <i class="fa fa-credit-card"></i> Pay with Stripe
-    </a>
-</div>
+{% extends "base.html" %}
+{% block content %}
+<section class="cy-payment-shell">
+    <div class="cy-panel">
+        <span class="cy-eyebrow"><i class="fa fa-shield-halved"></i> Secure checkout</span>
+        <h1 class="fw-bold mt-3">Choose how you want to pay</h1>
+        <p class="cy-muted">{{ booking.vehicle.title }} · {{ booking.get_booking_type_display }}</p>
+        <div class="cy-payment-total"><span>Total due</span><strong>KES {{ amount|floatformat:2 }}</strong></div>
+        <div class="row g-3 mt-2">
+            <div class="col-md-6">
+                <div class="cy-pay-card h-100">
+                    <i class="fa fa-credit-card"></i><h3>Stripe</h3>
+                    <p>Pay securely with a credit or debit card.</p>
+                    <a href="{% url 'stripe_checkout' booking.id %}" class="btn btn-primary w-100">Continue to Stripe</a>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <form method="post" action="{% url 'mpesa_payment' booking.id %}" class="cy-pay-card h-100">
+                    {% csrf_token %}
+                    <i class="fa fa-mobile-screen-button"></i><h3>M-Pesa</h3>
+                    <p>Receive a Daraja STK payment prompt on your phone.</p>
+                    <label for="phone" class="form-label fw-bold">Safaricom number</label>
+                    <input id="phone" name="phone" class="form-control mb-3" placeholder="0712 345 678" required>
+                    <button class="btn btn-success w-100">Send M-Pesa prompt</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
 {% endblock %}

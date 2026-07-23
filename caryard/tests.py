@@ -1,8 +1,9 @@
 import unittest
+import base64
 from decimal import Decimal
 from unittest.mock import patch, MagicMock
 
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils import timezone
@@ -10,9 +11,14 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 
 from .models import (
     Seller, Buyer, Vehicle, Booking, Comment, Rating,
-    Payment, ChatbotLog, Messages, Notification, Staff, ChatMessage
+    Payment, ChatbotLog, Messages, Notification, Staff, ChatMessage, EmailLoginCode
 )
 from .forms import SignupForm, BookingForm, VehicleForm, PaymentForm
+
+
+VALID_GIF = base64.b64decode(
+    "R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+)
 
 
 
@@ -83,7 +89,7 @@ class VehicleModelTest(TestCase):
         # Create a simple test image
         self.image = SimpleUploadedFile(
             name='test_car.jpg',
-            content=b'\x47\x49\x46\x38\x89\x61',  # Minimal GIF header
+            content=VALID_GIF,
             content_type='image/jpeg'
         )
         
@@ -136,7 +142,7 @@ class BookingModelTest(TestCase):
         
         self.image = SimpleUploadedFile(
             name='booking_car.jpg',
-            content=b'\x47\x49\x46\x38\x89\x61',
+            content=VALID_GIF,
             content_type='image/jpeg'
         )
         
@@ -243,7 +249,7 @@ class PaymentModelTest(TestCase):
         
         self.image = SimpleUploadedFile(
             name='pay_car.jpg',
-            content=b'\x47\x49\x46\x38\x89\x61',
+            content=VALID_GIF,
             content_type='image/jpeg'
         )
         
@@ -327,7 +333,7 @@ class CommentModelTest(TestCase):
         
         self.image = SimpleUploadedFile(
             name='comment_car.jpg',
-            content=b'\x47\x49\x46\x38\x89\x61',
+            content=VALID_GIF,
             content_type='image/jpeg'
         )
         
@@ -370,7 +376,7 @@ class RatingModelTest(TestCase):
         
         self.image = SimpleUploadedFile(
             name='rate_car.jpg',
-            content=b'\x47\x49\x46\x38\x89\x61',
+            content=VALID_GIF,
             content_type='image/jpeg'
         )
         
@@ -485,7 +491,7 @@ class VehicleFormTest(TestCase):
         """Test VehicleForm with valid data."""
         image = SimpleUploadedFile(
             name='test.jpg',
-            content=b'\x47\x49\x46\x38\x89\x61',
+            content=VALID_GIF,
             content_type='image/jpeg'
         )
         form_data = {
@@ -500,7 +506,7 @@ class VehicleFormTest(TestCase):
         """Test VehicleForm rejects missing title."""
         image = SimpleUploadedFile(
             name='test.jpg',
-            content=b'\x47\x49\x46\x38\x89\x61',
+            content=VALID_GIF,
             content_type='image/jpeg'
         )
         form_data = {
@@ -515,7 +521,7 @@ class VehicleFormTest(TestCase):
         """Test VehicleForm handles negative price."""
         image = SimpleUploadedFile(
             name='test.jpg',
-            content=b'\x47\x49\x46\x38\x89\x61',
+            content=VALID_GIF,
             content_type='image/jpeg'
         )
         form_data = {
@@ -610,7 +616,7 @@ class VehicleDetailViewTest(TestCase):
         
         self.image = SimpleUploadedFile(
             name='detail_car.jpg',
-            content=b'\x47\x49\x46\x38\x89\x61',
+            content=VALID_GIF,
             content_type='image/jpeg'
         )
         
@@ -653,7 +659,7 @@ class SearchViewTest(TestCase):
         
         self.image = SimpleUploadedFile(
             name='search_car.jpg',
-            content=b'\x47\x49\x46\x38\x89\x61',
+            content=VALID_GIF,
             content_type='image/jpeg'
         )
         
@@ -700,6 +706,7 @@ class SearchViewTest(TestCase):
         self.assertNotIn(self.vehicle, response.context['vehicles'])
 
 
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
 class AuthViewTest(TestCase):
     """Unit tests for authentication views."""
 
@@ -724,6 +731,18 @@ class AuthViewTest(TestCase):
             'password': 'testpass123'
         })
         self.assertEqual(response.status_code, 302)  # Redirect after login
+        self.assertEqual(response.url, reverse("verify_login_code"))
+        self.assertTrue(EmailLoginCode.objects.filter(user=self.user).exists())
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    @patch("caryard.views.secrets.randbelow", return_value=123456)
+    def test_email_code_completes_login(self, _random):
+        self.client.post(reverse("login"), {
+            "username": "testuser", "password": "testpass123"
+        })
+        response = self.client.post(reverse("verify_login_code"), {"code": "123456"})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(int(self.client.session["_auth_user_id"]), self.user.id)
 
     def test_login_view_post_invalid(self):
         """Test invalid login stays on page."""
@@ -738,6 +757,20 @@ class AuthViewTest(TestCase):
         response = self.client.get(reverse('signup'))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'signup.html')
+
+    @patch("caryard.views.secrets.randbelow", return_value=654321)
+    def test_signup_requires_email_code_before_login(self, _random):
+        response = self.client.post(reverse("signup"), {
+            "username": "newverifieduser",
+            "email": "newverified@example.com",
+            "password": "strongpass123",
+            "confirm_password": "strongpass123",
+        })
+        self.assertRedirects(response, reverse("verify_login_code"))
+        self.assertNotIn("_auth_user_id", self.client.session)
+        self.assertTrue(
+            EmailLoginCode.objects.filter(user__username="newverifieduser", used=False).exists()
+        )
 
     def test_logout_view(self):
         """Test logout redirects to home."""
@@ -778,7 +811,7 @@ class BookVehicleViewTest(TestCase):
         
         self.image = SimpleUploadedFile(
             name='book_car.jpg',
-            content=b'\x47\x49\x46\x38\x89\x61',
+            content=VALID_GIF,
             content_type='image/jpeg'
         )
         
@@ -895,7 +928,7 @@ class BookingSignalTest(TestCase):
         
         self.image = SimpleUploadedFile(
             name='signal_car.jpg',
-            content=b'\x47\x49\x46\x38\x89\x61',
+            content=VALID_GIF,
             content_type='image/jpeg'
         )
         

@@ -15,21 +15,6 @@ def create_user_profiles(sender, instance, created, **kwargs):
         Buyer.objects.create(user=instance)
 
 
-@receiver(post_save, sender=User)
-def save_user_profiles(sender, instance, **kwargs):
-    """Save the profiles when the User is saved."""
-    try:
-        instance.seller.save()
-    except Seller.DoesNotExist:
-        pass
-
-    try:
-        instance.buyer.save()
-    except Buyer.DoesNotExist:
-        pass
-
-
-
 @receiver(post_save, sender=Booking)
 def notify_on_booking(sender, instance, created, **kwargs):
     if created:
@@ -131,10 +116,3 @@ def notify_on_message(sender, instance, created, **kwargs):
         email = EmailMultiAlternatives(subject, text_message, settings.DEFAULT_FROM_EMAIL, to_email)
         email.attach_alternative(html_message, "text/html")
         email.send(fail_silently=True)
-
-
-
-@receiver(post_save, sender=User)
-def create_staff_profile(sender,instance,created,**kwargs):
-    if created and instance.is_staff:
-     Staff.objects.get_or_create(user=instance)

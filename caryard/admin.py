@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Seller, Buyer, Vehicle, Booking, Comment, Rating, Payment, ChatbotLog, Messages
+from .models import Seller, Buyer, Vehicle, Booking, Comment, Rating, Payment, ChatbotLog, Messages, EmailLoginCode
 
 
 admin.site.site_header = "Car Yard Admin"
@@ -19,8 +19,8 @@ class BuyerAdmin(admin.ModelAdmin):
 
 @admin.register(Vehicle)
 class VehicleAdmin(admin.ModelAdmin):
-    list_display = ("title", "seller", "price", "created")
-    list_filter = ("seller", "created")
+    list_display = ("title", "seller", "price", "quantity", "available_quantity", "is_available_for_rent", "created")
+    list_filter = ("seller", "is_available_for_rent", "created")
     search_fields = ("title", "description")
 
 
@@ -47,13 +47,13 @@ class CommentAdmin(admin.ModelAdmin):
 
 @admin.register(Rating)
 class RatingAdmin(admin.ModelAdmin):
-    list_display = ("vehicle", "user", "score")
+    list_display = ("vehicle", "user", "score", "service_score", "created")
     list_filter = ("score",)
 
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ("booking", "buyer", "method", "amount", "created")
+    list_display = ("booking", "buyer", "method", "amount", "status", "idempotency_key", "created")
     list_filter = ("method", "created")
     search_fields = ("buyer__user__username", "booking__vehicle__title")
 
@@ -68,4 +68,11 @@ class MessagesAdmin(admin.ModelAdmin):
     list_display = ('sender', 'receiver', 'content', 'timestamp')
     search_fields = ('sender__username', 'receiver__username', 'content')
     list_filter = ('timestamp',)
+
+
+@admin.register(EmailLoginCode)
+class EmailLoginCodeAdmin(admin.ModelAdmin):
+    list_display = ("user", "created", "expires_at", "attempts", "used")
+    list_filter = ("used", "created")
+    readonly_fields = ("user", "code_hash", "created", "expires_at", "attempts", "used")
 

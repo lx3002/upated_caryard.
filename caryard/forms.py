@@ -98,9 +98,26 @@ class CommentForm(StyledFormMixin, forms.ModelForm):
 
 
 class VehicleForm(StyledFormMixin, forms.ModelForm):
+    quantity = forms.IntegerField(min_value=0, required=False, initial=1)
     class Meta:
         model = Vehicle
-        fields = ['title', 'description', 'price', 'image']
+        fields = [
+            'title', 'description', 'price', 'quantity', 'is_available_for_rent',
+            'daily_rental_price', 'image', 'front_image', 'side_image',
+            'interior_image', 'rear_image',
+        ]
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 5}),
+            'is_available_for_rent': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("quantity") is None:
+            cleaned["quantity"] = 1
+        if cleaned.get("is_available_for_rent") and not cleaned.get("daily_rental_price"):
+            self.add_error("daily_rental_price", "Add a daily rate for rental vehicles.")
+        return cleaned
 
 
 class PaymentForm(StyledFormMixin, forms.ModelForm):

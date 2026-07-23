@@ -1,5 +1,10 @@
 {% extends "base.html" %} {% load static %} {% block content %}
-<section class="cy-hero" style="--hero-image: url('{% static 'img/car/car-5.jpg' %}');">
+<section class="cy-hero cy-cinematic-hero">
+    <div class="cy-hero-reel" aria-hidden="true">
+        <span style="background-image:url('{% static 'img/car/car-5.jpg' %}')"></span>
+        <span style="background-image:url('{% static 'img/car/car-14.jpg' %}')"></span>
+        <span style="background-image:url('{% static 'img/latest-offers/img-1.jpg' %}')"></span>
+    </div>
     <div class="cy-hero-content">
         <span class="cy-eyebrow"><i class="fa fa-gauge-high"></i> Premium vehicle marketplace</span>
         <h1>Find the car that fits your next chapter.</h1>
@@ -15,7 +20,7 @@
     <div class="cy-stat-card">
         <span class="cy-stat-icon"><i class="fa fa-car"></i></span>
         <span class="cy-stat-value">{{ stats.vehicle_count }}</span>
-        <span class="cy-stat-label">Vehicles available</span>
+        <span class="cy-stat-label">Units available</span>
     </div>
     <div class="cy-stat-card">
         <span class="cy-stat-icon"><i class="fa fa-users"></i></span>
@@ -39,7 +44,7 @@
         <i class="fa fa-shield-halved"></i>
         <div>
             <strong>Secure checkout</strong>
-            <span>Vehicle purchases flow through Stripe-backed payment confirmation.</span>
+            <span>Pay by card with Stripe or use an M-Pesa STK prompt.</span>
         </div>
     </div>
     <div class="cy-feature-item">
@@ -105,6 +110,9 @@
                     <img src="{% static 'img/car/car-14.jpg' %}" alt="Vehicle placeholder"> {% endif %}
                     <span class="cy-price-tag">${{ vehicle.price|floatformat:2 }}</span> {% if vehicle.average_rating %}
                     <span class="cy-rating-tag"><i class="fa fa-star"></i> {{ vehicle.average_rating|floatformat:1 }}</span> {% endif %}
+                    <span class="cy-stock-tag {% if not vehicle.is_in_stock %}sold-out{% endif %}">
+                        {% if vehicle.is_in_stock %}{{ vehicle.available_quantity }} available{% else %}Booked out{% endif %}
+                    </span>
                 </div>
                 <div class="cy-card-body">
                     <div class="d-flex justify-content-between gap-2 align-items-start mb-2">
@@ -118,7 +126,11 @@
                 </div>
                 <div class="cy-card-actions">
                     <a href="{% url 'vehicle_detail' vehicle.pk %}" class="btn btn-primary"><i class="fa fa-eye"></i> Details</a>
-                    <a href="{% url 'book_vehicle' vehicle.pk %}" class="btn btn-success"><i class="fa fa-calendar-check"></i> Book</a>
+                    {% if vehicle.is_in_stock %}
+                    <a href="{% url 'vehicle_detail' vehicle.pk %}#booking" class="btn btn-success"><i class="fa fa-calendar-check"></i> Book</a>
+                    {% else %}
+                    <button class="btn btn-secondary" disabled><i class="fa fa-ban"></i> Booked out</button>
+                    {% endif %}
                 </div>
                 <div class="px-3 pb-3">
                     <div class="border-top pt-3">

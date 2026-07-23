@@ -155,7 +155,6 @@
             <a class="navbar-brand" href="{% url 'home' %}">
                 <i class="fa fa-car"></i> Car Yard
             </a>
-
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -809,6 +808,39 @@
             });
         });
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('input[type="password"]').forEach((input, index) => {
+                if (input.closest('.cy-password-field')) return;
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'cy-password-field';
+                input.parentNode.insertBefore(wrapper, input);
+                wrapper.appendChild(input);
+
+                const toggle = document.createElement('button');
+                toggle.type = 'button';
+                toggle.className = 'cy-password-toggle';
+                toggle.setAttribute('aria-label', 'Show password');
+                toggle.setAttribute('aria-controls', input.id || `password-field-${index}`);
+                toggle.setAttribute('aria-pressed', 'false');
+                if (!input.id) input.id = `password-field-${index}`;
+                toggle.innerHTML = '<i class="fa fa-eye" aria-hidden="true"></i>';
+
+                toggle.addEventListener('click', () => {
+                    const isVisible = input.type === 'text';
+                    input.type = isVisible ? 'password' : 'text';
+                    toggle.setAttribute('aria-label', isVisible ? 'Show password' : 'Hide password');
+                    toggle.setAttribute('aria-pressed', isVisible ? 'false' : 'true');
+                    toggle.querySelector('i').className = isVisible ? 'fa fa-eye' : 'fa fa-eye-slash';
+                    input.focus({preventScroll: true});
+                });
+
+                wrapper.appendChild(toggle);
+            });
+        });
+    </script>
+    {% block extra_scripts %}{% endblock %}
 </body>
 
 </html>

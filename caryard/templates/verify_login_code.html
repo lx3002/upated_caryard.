@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<section class="cy-auth-shell">
+    <aside class="cy-auth-aside" style="--hero-image:url('{% static 'img/car/car-14.jpg' %}')">
+        <span class="cy-eyebrow"><i class="fa fa-shield-halved"></i> Two-step login</span>
+        <h1>One quick security check.</h1>
+        <p>We use a short-lived email code to make sure it is really you signing in.</p>
+    </aside>
+    <div class="cy-auth-form">
+        <span class="cy-code-icon"><i class="fa fa-envelope-open-text"></i></span>
+        <h2 class="fw-bold mt-3">Check your email</h2>
+        <p class="cy-muted">Enter the six-digit code sent to <strong>{{ masked_email }}</strong>. It expires at {{ expires_at|date:"H:i" }}.</p>
+        <form method="post" id="codeForm">
+            {% csrf_token %}
+            <label for="code" class="form-label fw-bold">Verification code</label>
+            <input id="code" name="code" class="form-control cy-code-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="000000" autofocus required>
+            <button class="btn btn-primary btn-lg w-100 mt-3"><i class="fa fa-lock-open"></i> Verify and log in</button>
+        </form>
+        <form method="post" action="{% url 'resend_login_code' %}" class="mt-3 text-center">
+            {% csrf_token %}
+            <button class="btn btn-link" type="submit"><i class="fa fa-rotate"></i> Send a new code</button>
+        </form>
+        <p class="text-center mt-2"><a href="{% url 'login' %}">Back to login</a></p>
+    </div>
+</section>
+{% endblock %}

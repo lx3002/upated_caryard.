@@ -4,7 +4,7 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 import caryard.routing  # use caryard’s routing
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'yourprojectname.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'cars.settings')
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),

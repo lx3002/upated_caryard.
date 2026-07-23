@@ -14,8 +14,11 @@
 {% if query or make or min_price or max_price %}
 <section class="cy-panel mb-4">
     <div class="d-flex flex-wrap align-items-center gap-2">
-        <strong class="me-2">Active filters</strong> {% if query %}<span class="cy-chip"><i class="fa fa-tag"></i> "{{ query }}"</span>{% endif %} {% if make %}<span class="cy-chip"><i class="fa fa-car"></i> {{ make }}</span>{% endif %} {% if min_price
-        %}<span class="cy-chip"><i class="fa fa-arrow-up"></i> Min ${{ min_price }}</span>{% endif %} {% if max_price %}<span class="cy-chip"><i class="fa fa-arrow-down"></i> Max ${{ max_price }}</span>{% endif %}
+        <strong class="me-2">Active filters</strong>
+        {% if query %}<span class="cy-chip"><i class="fa fa-tag"></i> "{{ query }}"</span>{% endif %}
+        {% if make %}<span class="cy-chip"><i class="fa fa-car"></i> {{ make }}</span>{% endif %}
+        {% if min_price %}<span class="cy-chip"><i class="fa fa-arrow-up"></i> Min ${{ min_price }}</span>{% endif %}
+        {% if max_price %}<span class="cy-chip"><i class="fa fa-arrow-down"></i> Max ${{ max_price }}</span>{% endif %}
     </div>
 </section>
 {% endif %} {% if vehicles %}

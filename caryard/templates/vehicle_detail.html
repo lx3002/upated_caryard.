@@ -25,6 +25,12 @@
             <img src="{% static 'img/car/car-5.jpg' %}" alt="Vehicle placeholder">
             {% endif %}
         </section>
+        <section class="cy-gallery-grid mb-4">
+            {% if vehicle.front_image %}<button class="cy-gallery-thumb" data-full="{{ vehicle.front_image.url }}"><img src="{{ vehicle.front_image.url }}" alt="{{ vehicle.title }} front view"><span>Front</span></button>{% endif %}
+            {% if vehicle.side_image %}<button class="cy-gallery-thumb" data-full="{{ vehicle.side_image.url }}"><img src="{{ vehicle.side_image.url }}" alt="{{ vehicle.title }} side view"><span>Side</span></button>{% endif %}
+            {% if vehicle.interior_image %}<button class="cy-gallery-thumb" data-full="{{ vehicle.interior_image.url }}"><img src="{{ vehicle.interior_image.url }}" alt="{{ vehicle.title }} interior"><span>Interior</span></button>{% endif %}
+            {% if vehicle.rear_image %}<button class="cy-gallery-thumb" data-full="{{ vehicle.rear_image.url }}"><img src="{{ vehicle.rear_image.url }}" alt="{{ vehicle.title }} rear view"><span>Back</span></button>{% endif %}
+        </section>
 
         <section class="cy-panel mb-4">
             <div class="cy-section-heading mt-0">
@@ -32,7 +38,7 @@
                     <h2>Vehicle Overview</h2>
                     <p>Listing details, seller information, and community feedback.</p>
                 </div>
-                <span class="cy-chip"><i class="fa fa-user"></i> {{ vehicle.seller.user.username }}</span>
+                <span class="cy-chip"><i class="fa fa-box"></i> {{ vehicle.available_quantity }} of {{ vehicle.quantity }} available</span>
             </div>
 
             <div class="row g-3 mb-4">
@@ -97,6 +103,24 @@
             <div class="alert alert-info mb-0">
                 <i class="fa fa-info-circle"></i> Please <a href="{% url 'login' %}" class="alert-link">log in</a> to comment.
             </div>
+            {% endif %}
+        </section>
+
+        <section class="cy-panel mb-4">
+            <div class="cy-section-heading mt-0"><div><h2>Verified buyer rating</h2><p>Rate the vehicle and your Car Yard service experience.</p></div></div>
+            {% if can_rate %}
+            <form id="rating-form" method="post" action="{% url 'ajax_rate' %}">
+                {% csrf_token %}<input type="hidden" name="vehicle_id" value="{{ vehicle.id }}">
+                <div class="row g-3">
+                    <div class="col-md-6"><label class="form-label fw-bold">Vehicle</label><div class="cy-star-input" data-name="score"></div></div>
+                    <div class="col-md-6"><label class="form-label fw-bold">Service</label><div class="cy-star-input" data-name="service_score"></div></div>
+                </div>
+                <textarea name="review" class="form-control my-3" rows="3" placeholder="Share what stood out...">{{ user_rating.review|default:"" }}</textarea>
+                <button class="btn btn-warning"><i class="fa fa-star"></i> Save rating</button>
+                <span id="rating-result" class="ms-2 cy-muted"></span>
+            </form>
+            {% else %}
+            <div class="alert alert-light mb-0"><i class="fa fa-circle-check"></i> Ratings are unlocked after a confirmed, paid purchase.</div>
             {% endif %}
         </section>
 
@@ -172,7 +196,20 @@
                     <textarea name="notes" id="notes" class="form-control" rows="3" placeholder="Questions, timing, or special requests"></textarea>
                 </div>
 
-                <button type="submit" class="btn btn-success btn-lg w-100"><i class="fa fa-check-circle"></i> Confirm Booking</button>
+                {% if vehicle.is_available_for_rent %}
+                <label class="border rounded p-3 bg-white booking-option mb-3">
+                    <input class="form-check-input me-2" type="radio" name="booking_type" value="RENTAL">
+                    <strong>Rent Vehicle</strong>
+                    <span class="d-block cy-muted small">KES {{ vehicle.daily_rental_price|floatformat:2 }} per day.</span>
+                </label>
+                <div id="rentalDates" class="row g-2 mb-3" style="display:none">
+                    <div class="col-6"><label class="small fw-bold">From</label><input type="date" name="rental_start" class="form-control"></div>
+                    <div class="col-6"><label class="small fw-bold">To</label><input type="date" name="rental_end" class="form-control"></div>
+                </div>
+                {% endif %}
+                <button type="submit" class="btn btn-success btn-lg w-100" {% if not vehicle.is_in_stock %}disabled{% endif %}>
+                    <i class="fa fa-check-circle"></i> {% if vehicle.is_in_stock %}Confirm Booking{% else %}Currently booked out{% endif %}
+                </button>
             </form>
             {% else %}
             <a href="{% url 'login' %}" class="btn btn-primary btn-lg w-100"><i class="fa fa-sign-in-alt"></i> Login to Book</a>
@@ -209,7 +246,38 @@
                 const isTour = this.value === 'TOUR';
                 tourDateField.style.display = isTour ? 'block' : 'none';
                 tourDateInput.required = isTour;
+                const rentalDates = document.getElementById('rentalDates');
+                if (rentalDates) {
+                    rentalDates.style.display = this.value === 'RENTAL' ? 'flex' : 'none';
+                    rentalDates.querySelectorAll('input').forEach(input => input.required = this.value === 'RENTAL');
+                }
             });
+        });
+
+        document.querySelectorAll('.cy-gallery-thumb').forEach(button => button.addEventListener('click', () => {
+            const main = document.querySelector('.cy-image-panel img');
+            if (main) main.src = button.dataset.full;
+        }));
+
+        document.querySelectorAll('.cy-star-input').forEach(group => {
+            const value = group.dataset.name === 'score' ? '{{ user_rating.score|default:0 }}' : '{{ user_rating.service_score|default:0 }}';
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden'; hidden.name = group.dataset.name; hidden.value = value;
+            group.appendChild(hidden);
+            for (let i = 1; i <= 5; i++) {
+                const star = document.createElement('button'); star.type = 'button'; star.innerHTML = '<i class="fa fa-star"></i>';
+                star.className = i <= Number(value) ? 'active' : '';
+                star.setAttribute('aria-label', `${i} stars`);
+                star.addEventListener('click', () => { hidden.value = i; [...group.querySelectorAll('button')].forEach((s, n) => s.classList.toggle('active', n < i)); });
+                group.appendChild(star);
+            }
+        });
+        const ratingForm = document.getElementById('rating-form');
+        if (ratingForm) ratingForm.addEventListener('submit', async event => {
+            event.preventDefault();
+            const response = await fetch(ratingForm.action, {method:'POST', body:new FormData(ratingForm), headers:{'X-CSRFToken':ratingForm.querySelector('[name=csrfmiddlewaretoken]').value}});
+            const data = await response.json();
+            document.getElementById('rating-result').textContent = data.ok ? `Saved · ${Number(data.average).toFixed(1)} average` : data.error;
         });
 
         const commentForm = document.getElementById('comment-form');

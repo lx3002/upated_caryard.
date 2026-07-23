@@ -13,6 +13,10 @@ urlpatterns = [
 
     # Payment
     path("payment/<int:booking_id>/", views.payment_view, name="payment"),
+    path("payment/<int:booking_id>/stripe/", views.stripe_checkout, name="stripe_checkout"),
+    path("payment/<int:booking_id>/mpesa/", views.mpesa_payment, name="mpesa_payment"),
+    path("payment/mpesa/callback/", views.mpesa_callback, name="mpesa_callback"),
+    path("payment/stripe/webhook/", views.stripe_webhook, name="stripe_webhook"),
 
     # Ajax endpoints
     path("ajax/comment/", views.ajax_comment, name="ajax_comment"),
@@ -21,6 +25,8 @@ urlpatterns = [
     # Auth
     path("signup/", views.signup_view, name="signup"),
     path("login/", views.login_view, name="login"),
+    path("login/verify/", views.verify_login_code, name="verify_login_code"),
+    path("login/resend/", views.resend_login_code, name="resend_login_code"),
     path("logout/", views.logout_view, name="logout"),
 
     # Search

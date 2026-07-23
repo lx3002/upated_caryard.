@@ -42,10 +42,31 @@
                     {% if form.price.errors %}<div class="text-danger small mt-1">{{ form.price.errors.0 }}</div>{% endif %}
                 </div>
                 <div>
-                    <label for="{{ form.image.id_for_label }}" class="form-label fw-bold"><i class="fa fa-image"></i> Vehicle Image</label>
-                    {{ form.image }}
-                    {% if form.image.errors %}<div class="text-danger small mt-1">{{ form.image.errors.0 }}</div>{% endif %}
+                    <label for="{{ form.quantity.id_for_label }}" class="form-label fw-bold"><i class="fa fa-boxes-stacked"></i> Units in stock</label>
+                    {{ form.quantity }}
                 </div>
+            </div>
+
+            <div class="cy-panel mt-4">
+                <h3 class="h5 fw-bold"><i class="fa fa-images"></i> Vehicle photo gallery</h3>
+                <p class="cy-muted">Upload clear views so buyers can inspect every angle.</p>
+                <div class="cy-upload-grid">
+                    <div><label class="form-label fw-bold">Cover image *</label>{{ form.image }}</div>
+                    <div><label class="form-label fw-bold">Front</label>{{ form.front_image }}</div>
+                    <div><label class="form-label fw-bold">Side</label>{{ form.side_image }}</div>
+                    <div><label class="form-label fw-bold">Interior</label>{{ form.interior_image }}</div>
+                    <div><label class="form-label fw-bold">Back</label>{{ form.rear_image }}</div>
+                </div>
+            </div>
+
+            <div class="cy-panel mt-3">
+                <div class="form-check form-switch mb-3">
+                    {{ form.is_available_for_rent }}
+                    <label class="form-check-label fw-bold" for="{{ form.is_available_for_rent.id_for_label }}">Also available for rent</label>
+                </div>
+                <label class="form-label fw-bold">Daily rental price (KES)</label>
+                {{ form.daily_rental_price }}
+                {% if form.daily_rental_price.errors %}<div class="text-danger small mt-1">{{ form.daily_rental_price.errors.0 }}</div>{% endif %}
             </div>
 
             {% if form.non_field_errors %}
